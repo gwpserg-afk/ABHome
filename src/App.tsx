@@ -1,48 +1,74 @@
 import { useState, useEffect, useRef } from "react";
+import { BrowserRouter, Routes, Route, Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import {
   Phone, Star, ShieldCheck, BadgeCheck, Wallet, MapPin, Clock, ArrowRight,
-  Menu, X, Home, Hammer, Droplets, PaintRoller, Wrench, Zap, Layers, Building2,
+  Menu, X, Home, Hammer, Droplets, PaintRoller, Wrench, Layers,
   CheckCircle2, Calculator, Sparkles, Award, ThumbsUp, ChevronRight,
+  User, LayoutDashboard, DollarSign, TrendingUp, Users, CreditCard, ArrowLeft, Percent,
 } from "lucide-react";
 
 const PHONE = "(810) 627-4895";
 const PHONE_HREF = "tel:+18106274895";
 const ADDRESS = "2424 Howe St, Shelby Township, MI 48317";
 const GOOGLE_REVIEWS = "https://share.google/FK0XyEBS4mhp3d0xX";
+// Free address autocomplete (geoapify.com — free key, no credit card). Empty = falls back to keyless street-level.
+const GEOAPIFY_KEY = "";
+
+/* ---------------- Logo ---------------- */
+// The brand logo has dark charcoal lettering on transparent — perfect on light backgrounds.
+// On dark backgrounds pass `chip` to sit it on a clean white tile so it stays legible.
+function Logo({ h = "h-10", chip = false }: { h?: string; chip?: boolean }) {
+  const img = <img src="/logo.png" alt="A&B Home Improvement" className={`${h} w-auto object-contain shrink-0`} />;
+  if (chip) return <span className="grid place-items-center bg-white rounded-xl px-2.5 py-1.5 shadow-sm">{img}</span>;
+  return img;
+}
+
+/* ---------------- Scroll to top on route change ---------------- */
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  return null;
+}
 
 /* ---------------- Header ---------------- */
 function Header() {
   const [open, setOpen] = useState(false);
   const nav = [
-    ["Services", "#services"],
-    ["Estimate", "#estimate"],
-    ["Gallery", "#gallery"],
-    ["Reviews", "#reviews"],
-    ["Financing", "#financing"],
-    ["Contact", "#contact"],
+    ["Services", "/services"],
+    ["Estimate", "/estimate"],
+    ["Gallery", "/gallery"],
+    ["Reviews", "/reviews"],
+    ["Financing", "/financing"],
+    ["Contact", "/contact"],
   ];
+  const linkCls = ({ isActive }: { isActive: boolean }) =>
+    `text-sm font-semibold transition-colors ${isActive ? "text-brand" : "text-slatey hover:text-ink"}`;
   return (
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-black/5">
       <div className="container-x flex items-center justify-between h-[68px]">
-        <a href="#top" className="flex items-center gap-2.5">
-          <span className="grid place-items-center w-9 h-9 rounded-lg bg-ink text-white font-display font-extrabold">A&amp;B</span>
-          <span className="leading-none">
-            <span className="block font-display font-extrabold text-ink text-lg tracking-tight">A&amp;B Home Improvement</span>
-            <span className="block text-[11px] font-semibold text-brand uppercase tracking-[0.18em]">Roofing · Shelby Twp, MI</span>
+        <Link to="/" className="flex items-center gap-3">
+          <Logo h="h-12" />
+          <span className="hidden sm:block leading-none border-l border-black/10 pl-3">
+            <span className="block text-[11px] font-bold text-brand uppercase tracking-[0.18em]">Roofing Done Right</span>
+            <span className="block text-[11px] font-semibold text-slatey uppercase tracking-[0.14em] mt-0.5">Shelby Twp, MI</span>
           </span>
-        </a>
+        </Link>
         <nav className="hidden lg:flex items-center gap-7">
           {nav.map(([l, h]) => (
-            <a key={h} href={h} className="text-sm font-semibold text-slatey hover:text-ink transition-colors">{l}</a>
+            <NavLink key={h} to={h} className={linkCls}>{l}</NavLink>
           ))}
         </nav>
         <div className="hidden lg:flex items-center gap-3">
           <a href={PHONE_HREF} className="flex items-center gap-2 text-sm font-bold text-ink">
             <Phone className="w-4 h-4 text-brand" /> {PHONE}
           </a>
-          <a href="#estimate" className="inline-flex items-center gap-1.5 bg-brand hover:bg-brand-dark text-white font-bold text-sm px-4 py-2.5 rounded-lg shadow-brand transition-colors">
+          <Link to="/estimate" className="inline-flex items-center gap-1.5 bg-brand hover:bg-brand-dark text-white font-bold text-sm px-4 py-2.5 rounded-lg shadow-brand transition-colors">
             Free Estimate
-          </a>
+          </Link>
+          <Link to="/admin" title="Admin dashboard" className="flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full border border-black/10 hover:border-brand hover:bg-cloud transition-colors">
+            <span className="grid place-items-center w-7 h-7 rounded-full bg-ink text-white"><User className="w-4 h-4" /></span>
+            <span className="text-sm font-bold text-ink">Admin</span>
+          </Link>
         </div>
         <button onClick={() => setOpen(!open)} className="lg:hidden p-2 text-ink" aria-label="Menu">
           {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -52,8 +78,9 @@ function Header() {
         <div className="lg:hidden border-t border-black/5 bg-white">
           <div className="container-x py-4 flex flex-col gap-1">
             {nav.map(([l, h]) => (
-              <a key={h} href={h} onClick={() => setOpen(false)} className="py-2.5 font-semibold text-slatey">{l}</a>
+              <NavLink key={h} to={h} onClick={() => setOpen(false)} className="py-2.5 font-semibold text-slatey">{l}</NavLink>
             ))}
+            <Link to="/admin" onClick={() => setOpen(false)} className="py-2.5 font-semibold text-slatey flex items-center gap-2"><User className="w-4 h-4" /> Admin Dashboard</Link>
             <a href={PHONE_HREF} className="mt-2 inline-flex items-center justify-center gap-2 bg-ink text-white font-bold px-4 py-3 rounded-lg">
               <Phone className="w-4 h-4" /> {PHONE}
             </a>
@@ -83,9 +110,9 @@ function Hero() {
             honest pricing, and a free estimate measured right from your address.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3">
-            <a href="#estimate" className="inline-flex items-center justify-center gap-2 bg-brand hover:bg-brand-dark text-white font-bold px-7 py-4 rounded-xl shadow-brand transition-all hover:scale-[1.02]">
+            <Link to="/estimate" className="inline-flex items-center justify-center gap-2 bg-brand hover:bg-brand-dark text-white font-bold px-7 py-4 rounded-xl shadow-brand transition-all hover:scale-[1.02]">
               <Calculator className="w-5 h-5" /> Get My Instant Estimate
-            </a>
+            </Link>
             <a href={PHONE_HREF} className="inline-flex items-center justify-center gap-2 border-2 border-white/40 hover:bg-white hover:text-ink font-bold px-7 py-4 rounded-xl transition-all">
               <Phone className="w-5 h-5" /> {PHONE}
             </a>
@@ -147,16 +174,26 @@ function AddressAutocomplete({ value, onChange, onSelect }: { value: string; onC
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(async () => {
       try {
-        // Free OSM-based autocomplete, biased to Michigan (no API key needed)
-        const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(value)}&limit=8&lat=43.3&lon=-84.6`);
-        const d = await r.json();
-        const list: string[] = (d.features || [])
-          .filter((f: any) => f.properties?.state === "Michigan")
-          .map((f: any) => {
-            const p = f.properties;
-            const line1 = [p.housenumber, p.street || p.name].filter(Boolean).join(" ");
-            return [line1, p.city || p.district || p.county, "MI", p.postcode].filter(Boolean).join(", ");
-          });
+        let list: string[] = [];
+        if (GEOAPIFY_KEY) {
+          // Geoapify autocomplete — returns real house numbers, restricted to Michigan (free key, no card)
+          const r = await fetch(`https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(value)}&filter=rect:-90.42,41.70,-82.12,48.31&format=json&limit=6&apiKey=${GEOAPIFY_KEY}`);
+          const d = await r.json();
+          list = (d.results || [])
+            .filter((f: any) => f.state_code === "MI" || f.state === "Michigan")
+            .map((f: any) => f.formatted as string);
+        } else {
+          // Fallback: free OSM autocomplete, biased to Michigan (no API key — street-level only)
+          const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(value)}&limit=8&lat=43.3&lon=-84.6`);
+          const d = await r.json();
+          list = (d.features || [])
+            .filter((f: any) => f.properties?.state === "Michigan")
+            .map((f: any) => {
+              const p = f.properties;
+              const line1 = [p.housenumber, p.street || p.name].filter(Boolean).join(" ");
+              return [line1, p.city || p.district || p.county, "MI", p.postcode].filter(Boolean).join(", ");
+            });
+        }
         setSug([...new Set(list)].slice(0, 6));
         setOpen(true);
       } catch { setSug([]); }
@@ -301,9 +338,7 @@ const SERVICES = [
   { icon: Layers, t: "Siding", d: "Vinyl & fiber-cement siding that lasts and looks sharp." },
   { icon: PaintRoller, t: "Painting", d: "Interior & exterior painting, clean lines, quality finish." },
   { icon: Hammer, t: "Drywall", d: "Repairs, patches, new walls & ceilings — smooth results." },
-  { icon: Building2, t: "Chimney & Masonry", d: "Brick repair, rebuilds & tuckpointing done right." },
   { icon: Wrench, t: "Plumbing", d: "Repairs and fixes for everyday plumbing problems." },
-  { icon: Zap, t: "Electrical", d: "Safe electrical repairs and home improvements." },
 ];
 
 function Services() {
@@ -315,9 +350,9 @@ function Services() {
             <p className="text-brand font-bold uppercase tracking-[0.2em] text-xs mb-3">What We Do</p>
             <h2 className="text-4xl md:text-5xl text-ink">Roofing first — and anything else your home needs.</h2>
           </div>
-          <a href="#estimate" className="inline-flex items-center gap-1.5 text-brand font-bold hover:gap-2.5 transition-all">
+          <Link to="/estimate" className="inline-flex items-center gap-1.5 text-brand font-bold hover:gap-2.5 transition-all">
             Get a free quote <ChevronRight className="w-4 h-4" />
-          </a>
+          </Link>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {SERVICES.map((s) => (
@@ -344,7 +379,7 @@ function Gallery() {
     { src: "/photos/crew-shingles.png", t: "Full Tear-Off & Reroof" },
     { src: "/photos/shingle-roof-brown.png", t: "Architectural Shingles" },
     { src: "/photos/underlayment.png", t: "Quality Underlayment" },
-    { src: "/photos/chimney.png", t: "Chimney & Masonry" },
+    { src: "/photos/chimney.png", t: "Exterior & Masonry" },
   ];
   return (
     <section id="gallery" className="section bg-cloud scroll-mt-20">
@@ -443,22 +478,33 @@ function Financing() {
               <li key={x} className="flex items-center gap-3 font-semibold"><CheckCircle2 className="w-5 h-5 text-brand-soft shrink-0" /> {x}</li>
             ))}
           </ul>
-          <a href="#estimate" className="mt-8 inline-flex items-center gap-2 bg-brand hover:bg-brand-dark font-bold px-7 py-4 rounded-xl shadow-brand transition-colors">
+          <Link to="/estimate" className="mt-8 inline-flex items-center gap-2 bg-brand hover:bg-brand-dark font-bold px-7 py-4 rounded-xl shadow-brand transition-colors">
             See my monthly payment <ArrowRight className="w-5 h-5" />
-          </a>
+          </Link>
         </div>
         <div className="bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur">
-          <Wallet className="w-10 h-10 text-brand-soft" />
-          <div className="mt-4 font-display text-3xl font-extrabold">Roofs from <span className="text-brand-soft">$99/mo</span></div>
-          <p className="text-white/60 mt-2">Real, affordable monthly plans tailored to your project and budget. Get your exact number with the instant estimator above.</p>
-          <div className="mt-6 grid grid-cols-3 gap-3 text-center">
-            {[["50", "5-Star Reviews"], ["4.8", "Google Rating"], ["#3", "In Shelby Twp"]].map(([n, l]) => (
-              <div key={l} className="bg-white/5 rounded-xl py-4 border border-white/10">
-                <div className="font-display text-2xl font-extrabold text-brand-soft">{n}</div>
-                <div className="text-[11px] text-white/60 mt-1">{l}</div>
+          <div className="flex items-center justify-between">
+            <Wallet className="w-10 h-10 text-brand-soft" />
+            <span className="inline-flex items-center gap-1.5 bg-brand-soft/15 text-brand-soft text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full">$0 Down Available</span>
+          </div>
+          <div className="mt-4 font-display text-2xl font-extrabold">Pick a plan that fits your budget</div>
+          <p className="text-white/60 mt-2 text-sm">Spread the cost over time. The longer the term, the lower your monthly payment. Get your exact number with the instant estimator.</p>
+          <div className="mt-6 space-y-3">
+            {[
+              ["12 months", "Pay it off fast", "Highest monthly"],
+              ["24 months", "Balanced & popular", "Lower monthly"],
+              ["Up to 60 months", "Lowest monthly payment", "Most affordable"],
+            ].map(([term, tag, note]) => (
+              <div key={term} className="flex items-center justify-between bg-white/5 rounded-xl px-4 py-3.5 border border-white/10">
+                <div>
+                  <div className="font-display font-extrabold text-brand-soft">{term}</div>
+                  <div className="text-[11px] text-white/55 mt-0.5">{tag}</div>
+                </div>
+                <div className="text-[11px] text-white/45 text-right">{note}</div>
               </div>
             ))}
           </div>
+          <p className="text-[11px] text-white/45 mt-4 leading-relaxed">Financing offered through our lending partners, subject to credit approval. $0-down and multiple term options available — we'll match you to the right plan.</p>
         </div>
       </div>
     </section>
@@ -470,21 +516,21 @@ function ContactForm() {
   const [done, setDone] = useState(false);
   if (done) {
     return (
-      <div className="mt-6 rounded-xl bg-brand/15 border border-brand/30 p-8 text-center">
-        <CheckCircle2 className="w-12 h-12 text-brand-soft mx-auto mb-3" />
-        <div className="font-bold text-xl">Request sent!</div>
-        <p className="text-white/70 mt-1">We'll reach out shortly to schedule your free estimate.</p>
+      <div className="mt-6 rounded-xl bg-brand/10 border border-brand/25 p-8 text-center">
+        <CheckCircle2 className="w-12 h-12 text-brand mx-auto mb-3" />
+        <div className="font-bold text-xl text-ink">Request sent!</div>
+        <p className="text-slatey mt-1">We'll reach out shortly to schedule your free estimate.</p>
       </div>
     );
   }
-  const field = "w-full rounded-lg bg-white/10 border border-white/15 px-4 py-3 text-sm placeholder:text-white/40 focus:outline-none focus:border-brand";
+  const field = "w-full rounded-lg bg-cloud border border-black/10 px-4 py-3 text-sm text-ink placeholder:text-slatey/50 focus:outline-none focus:border-brand focus:bg-white transition";
   return (
     <form onSubmit={(e) => { e.preventDefault(); setDone(true); }} className="mt-6 space-y-3">
       <input required placeholder="Name" className={field} />
       <input required type="tel" placeholder="Phone" className={field} />
       <input placeholder="Property address" className={field} />
       <textarea rows={3} placeholder="What do you need? (e.g. new roof, leak repair, gutters)" className={field} />
-      <button type="submit" className="w-full inline-flex items-center justify-center gap-2 bg-brand hover:bg-brand-dark font-bold px-6 py-3.5 rounded-lg transition-colors">
+      <button type="submit" className="w-full inline-flex items-center justify-center gap-2 bg-brand hover:bg-brand-dark text-white font-bold px-6 py-3.5 rounded-lg transition-colors">
         Get My Free Estimate <ArrowRight className="w-4 h-4" />
       </button>
     </form>
@@ -519,10 +565,35 @@ function Contact() {
             </div>
           </div>
         </div>
-        <div className="bg-ink text-white rounded-2xl shadow-lift p-8">
-          <h3 className="font-display text-2xl font-extrabold">Request your free estimate</h3>
-          <p className="text-white/60 text-sm mt-1">We'll get back to you fast — usually the same day.</p>
+        <div className="bg-white rounded-2xl shadow-lift border border-black/5 border-t-4 border-t-brand p-8">
+          <div className="flex items-center gap-2 text-brand text-[11px] font-bold uppercase tracking-[0.2em] mb-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-brand" /> Free · No Obligation
+          </div>
+          <h3 className="font-display text-2xl font-extrabold text-ink">Request your free estimate</h3>
+          <p className="text-slatey text-sm mt-1">We'll get back to you fast — usually the same day.</p>
           <ContactForm />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------------- CTA band ---------------- */
+function CtaBand() {
+  return (
+    <section className="bg-brand text-white">
+      <div className="container-x py-14 flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
+        <div>
+          <h2 className="font-display text-3xl md:text-4xl font-extrabold">Ready for your free estimate?</h2>
+          <p className="mt-2 text-white/85 text-lg">See your roof from above and get an instant price — no pressure.</p>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-3 shrink-0">
+          <Link to="/estimate" className="inline-flex items-center justify-center gap-2 bg-ink hover:bg-charcoal text-white font-bold px-7 py-4 rounded-xl transition-colors">
+            <Calculator className="w-5 h-5" /> Get My Instant Estimate
+          </Link>
+          <a href={PHONE_HREF} className="inline-flex items-center justify-center gap-2 border-2 border-white/50 hover:bg-white hover:text-brand font-bold px-7 py-4 rounded-xl transition-all">
+            <Phone className="w-5 h-5" /> {PHONE}
+          </a>
         </div>
       </div>
     </section>
@@ -535,16 +606,17 @@ function Footer() {
     <footer className="bg-ink text-white/70 border-t border-white/10">
       <div className="container-x py-12 grid md:grid-cols-3 gap-8">
         <div>
-          <div className="flex items-center gap-2.5 mb-3">
-            <span className="grid place-items-center w-9 h-9 rounded-lg bg-brand text-white font-display font-extrabold">A&amp;B</span>
-            <span className="font-display font-extrabold text-white text-lg">A&amp;B Home Improvement</span>
+          <div className="mb-4">
+            <Logo h="h-14" chip />
           </div>
           <p className="text-sm">Roofing-first home improvement · Shelby Township, MI · Licensed &amp; Insured · Family owned.</p>
         </div>
         <div>
-          <h4 className="text-white font-bold text-xs uppercase tracking-[0.2em] mb-3">Services</h4>
+          <h4 className="text-white font-bold text-xs uppercase tracking-[0.2em] mb-3">Explore</h4>
           <ul className="space-y-1.5 text-sm">
-            {["Roofing", "Gutters", "Siding", "Painting", "Drywall", "Chimney & Masonry"].map((s) => <li key={s}>{s}</li>)}
+            {[["Services", "/services"], ["Instant Estimate", "/estimate"], ["Gallery", "/gallery"], ["Reviews", "/reviews"], ["Financing", "/financing"], ["Contact", "/contact"]].map(([l, h]) => (
+              <li key={h}><Link to={h} className="hover:text-brand-soft">{l}</Link></li>
+            ))}
           </ul>
         </div>
         <div>
@@ -563,19 +635,208 @@ function Footer() {
   );
 }
 
+/* ---------------- Page header (for interior pages) ---------------- */
+function PageHead({ label, title, sub }: { label: string; title: string; sub?: string }) {
+  return (
+    <section className="bg-ink text-white pt-16 pb-14">
+      <div className="container-x text-center max-w-2xl mx-auto">
+        <p className="text-brand-soft font-bold uppercase tracking-[0.2em] text-xs mb-3">{label}</p>
+        <h1 className="font-display text-4xl md:text-5xl font-extrabold">{title}</h1>
+        {sub && <p className="mt-4 text-white/70 text-lg">{sub}</p>}
+      </div>
+    </section>
+  );
+}
+
+/* ---------------- Pages ---------------- */
+function HomePage() {
+  return (<><Hero /><TrustBar /><Services /><Reviews /><CtaBand /><Contact /></>);
+}
+function ServicesPage() {
+  return (<><PageHead label="What We Do" title="Roofing first — and the whole house too." sub="One trusted local crew for roofing, gutters, siding, and more." /><Services /><CtaBand /></>);
+}
+function EstimatePage() {
+  return (<><Estimator /></>);
+}
+function GalleryPage() {
+  return (<><PageHead label="Our Work" title="See the quality for yourself." sub="Real jobs from real Metro Detroit homeowners." /><Gallery /><CtaBand /></>);
+}
+function ReviewsPage() {
+  return (<><PageHead label="Reviews" title="Trusted by 50 happy neighbors." sub="4.8 stars and a Top 3 Roofer award in Shelby Township." /><Reviews /><CtaBand /></>);
+}
+function FinancingPage() {
+  return (<><Financing /><Contact /></>);
+}
+function ContactPage() {
+  return (<><PageHead label="Get In Touch" title="Let's talk about your roof." sub="Call, text, or send us a note — we usually reply the same day." /><Contact /></>);
+}
+
+/* ---------------- Site layout ---------------- */
+function SiteLayout() {
+  return (<><Header /><main><Outlet /></main><Footer /></>);
+}
+
+/* ---------------- Admin dashboard ---------------- */
+const LEADS = [
+  {
+    name: "Sarah Whitmore", address: "57559 Yorkshire Dr, Shelby Twp", service: "Full Roof Replacement",
+    est: 14200, cost: 8600, plan: "24-mo financing", paid: "Financing (approved)", status: "Won", date: "Jun 26",
+  },
+  {
+    name: "Mike Delgado", address: "1204 Rochester Rd, Rochester Hills", service: "Gutters + Siding",
+    est: 6800, cost: 4100, plan: "$0-down · 12-mo", paid: "Card (deposit)", status: "In Progress", date: "Jun 28",
+  },
+  {
+    name: "The Hendersons", address: "8890 24 Mile Rd, Macomb", service: "Roof Leak Repair",
+    est: 2400, cost: 1150, plan: "Paid in full", paid: "Check", status: "New Lead", date: "Jun 30",
+  },
+];
+
+const statusStyle: Record<string, string> = {
+  "Won": "bg-green-100 text-green-700",
+  "In Progress": "bg-brand/15 text-brand-dark",
+  "New Lead": "bg-blue-100 text-blue-700",
+};
+
+function AdminPage() {
+  const money = (n: number) => "$" + n.toLocaleString();
+  const pipeline = LEADS.reduce((s, l) => s + l.est, 0);
+  const totalMargin = LEADS.reduce((s, l) => s + (l.est - l.cost), 0);
+  const avgMargin = Math.round((totalMargin / pipeline) * 100);
+
+  const kpis = [
+    { icon: Users, label: "Active Leads", value: String(LEADS.length), sub: "3 new this week", tone: "text-brand" },
+    { icon: DollarSign, label: "Pipeline Value", value: money(pipeline), sub: "across all open jobs", tone: "text-green-600" },
+    { icon: TrendingUp, label: "Total Margin", value: money(totalMargin), sub: "estimated profit", tone: "text-brand" },
+    { icon: Percent, label: "Avg Margin", value: avgMargin + "%", sub: "healthy & on target", tone: "text-green-600" },
+  ];
+
+  return (
+    <div className="min-h-screen bg-cloud">
+      {/* Admin top bar */}
+      <div className="bg-ink text-white">
+        <div className="container-x flex items-center justify-between h-16">
+          <div className="flex items-center gap-3">
+            <Logo h="h-9" chip />
+            <span className="font-display font-extrabold text-lg hidden sm:block">Owner <span className="text-brand-soft">Dashboard</span></span>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link to="/" className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-white/70 hover:text-white">
+              <ArrowLeft className="w-4 h-4" /> Back to site
+            </Link>
+            <div className="flex items-center gap-2.5 pl-4 border-l border-white/15">
+              <span className="grid place-items-center w-9 h-9 rounded-full bg-brand text-white font-bold text-sm">B</span>
+              <div className="leading-tight">
+                <div className="text-sm font-bold">Brad</div>
+                <div className="text-[11px] text-white/55">Owner</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="container-x py-8">
+        <div className="flex items-center gap-2 mb-1 text-brand"><LayoutDashboard className="w-5 h-5" /><span className="font-bold uppercase tracking-wider text-xs">Dashboard</span></div>
+        <h1 className="font-display text-3xl font-extrabold text-ink">Welcome back, Brad</h1>
+        <p className="text-slatey mt-1">Here's how your jobs and leads are looking.</p>
+        <p className="mt-2 inline-block text-[11px] font-semibold bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full">Demo data — sample leads for preview</p>
+
+        {/* KPI cards */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+          {kpis.map((k) => (
+            <div key={k.label} className="bg-white rounded-2xl border border-black/5 shadow-card p-5">
+              <div className="flex items-center justify-between">
+                <span className={`grid place-items-center w-10 h-10 rounded-xl bg-cloud ${k.tone}`}><k.icon className="w-5 h-5" /></span>
+              </div>
+              <div className="mt-4 font-display text-3xl font-extrabold text-ink">{k.value}</div>
+              <div className="text-sm font-bold text-slatey mt-0.5">{k.label}</div>
+              <div className="text-[12px] text-slatey/70 mt-0.5">{k.sub}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Leads table */}
+        <div className="bg-white rounded-2xl border border-black/5 shadow-card mt-8 overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-5 border-b border-black/5">
+            <div>
+              <h2 className="font-display text-xl font-extrabold text-ink">Leads &amp; Jobs</h2>
+              <p className="text-sm text-slatey">Every estimate, cost, margin, and how they paid.</p>
+            </div>
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-brand"><Sparkles className="w-4 h-4" /> Auto-saved from the site</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-[11px] uppercase tracking-wider text-slatey/70 bg-cloud">
+                  <th className="px-6 py-3 font-bold">Customer</th>
+                  <th className="px-4 py-3 font-bold">Service</th>
+                  <th className="px-4 py-3 font-bold text-right">Estimate</th>
+                  <th className="px-4 py-3 font-bold text-right">Cost</th>
+                  <th className="px-4 py-3 font-bold text-right">Margin</th>
+                  <th className="px-4 py-3 font-bold">Payment Plan</th>
+                  <th className="px-4 py-3 font-bold">Paid Via</th>
+                  <th className="px-4 py-3 font-bold">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-black/5">
+                {LEADS.map((l) => {
+                  const margin = l.est - l.cost;
+                  const pct = Math.round((margin / l.est) * 100);
+                  return (
+                    <tr key={l.name} className="hover:bg-cloud/60 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="font-bold text-ink">{l.name}</div>
+                        <div className="text-[12px] text-slatey flex items-center gap-1 mt-0.5"><MapPin className="w-3 h-3" /> {l.address}</div>
+                        <div className="text-[11px] text-slatey/60 mt-0.5">{l.date}</div>
+                      </td>
+                      <td className="px-4 py-4 text-slatey">{l.service}</td>
+                      <td className="px-4 py-4 text-right font-bold text-ink">{money(l.est)}</td>
+                      <td className="px-4 py-4 text-right text-slatey">{money(l.cost)}</td>
+                      <td className="px-4 py-4 text-right">
+                        <div className="font-bold text-green-600">{money(margin)}</div>
+                        <div className="text-[11px] text-slatey/70">{pct}% margin</div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <span className="inline-flex items-center gap-1.5 text-slatey"><Wallet className="w-3.5 h-3.5 text-brand" /> {l.plan}</span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <span className="inline-flex items-center gap-1.5 text-slatey"><CreditCard className="w-3.5 h-3.5 text-brand" /> {l.paid}</span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <span className={`inline-block text-[12px] font-bold px-2.5 py-1 rounded-full ${statusStyle[l.status]}`}>{l.status}</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <p className="text-[12px] text-slatey/60 mt-6">This is a live preview of the owner dashboard. When we go live, every estimate submitted on the site drops in here automatically, and you'll be able to update statuses, costs, and export reports.</p>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- App ---------------- */
 export default function App() {
   return (
-    <>
-      <Header />
-      <Hero />
-      <TrustBar />
-      <Estimator />
-      <Services />
-      <Gallery />
-      <Reviews />
-      <Financing />
-      <Contact />
-      <Footer />
-    </>
+    <BrowserRouter>
+      <ScrollToTop />
+      <Routes>
+        <Route element={<SiteLayout />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/services" element={<ServicesPage />} />
+          <Route path="/estimate" element={<EstimatePage />} />
+          <Route path="/gallery" element={<GalleryPage />} />
+          <Route path="/reviews" element={<ReviewsPage />} />
+          <Route path="/financing" element={<FinancingPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+        </Route>
+        <Route path="/admin" element={<AdminPage />} />
+        <Route path="*" element={<HomePage />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
