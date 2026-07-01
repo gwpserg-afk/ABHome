@@ -11,8 +11,23 @@ const PHONE = "(810) 627-4895";
 const PHONE_HREF = "tel:+18106274895";
 const ADDRESS = "2424 Howe St, Shelby Township, MI 48317";
 const GOOGLE_REVIEWS = "https://share.google/FK0XyEBS4mhp3d0xX";
-// Free address autocomplete (geoapify.com — free key, no credit card). Empty = falls back to keyless street-level.
-const GEOAPIFY_KEY = "";
+// Address autocomplete providers (best first). Tokens come from env vars so they never get committed.
+// Mapbox = best house-number accuracy. Set VITE_MAPBOX_TOKEN in .env (local) + Vercel (prod).
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined;
+const GEOAPIFY_KEY = (import.meta.env.VITE_GEOAPIFY_KEY as string | undefined) || "";
+// Michigan bounding box: minLon, minLat, maxLon, maxLat
+const MI_BBOX = "-90.42,41.70,-82.12,48.31";
+
+// Abuse guard: cap address lookups per browser session so no one can hammer the geocoding API.
+const MAX_LOOKUPS_PER_SESSION = 80;
+function underLookupLimit() {
+  try {
+    const n = +(sessionStorage.getItem("ab_geo_calls") || "0");
+    if (n >= MAX_LOOKUPS_PER_SESSION) return false;
+    sessionStorage.setItem("ab_geo_calls", String(n + 1));
+    return true;
+  } catch { return true; }
+}
 
 /* ---------------- Logo ---------------- */
 // The brand logo has dark charcoal lettering on transparent — perfect on light backgrounds.
@@ -45,12 +60,12 @@ function Header() {
     `text-sm font-semibold transition-colors ${isActive ? "text-brand" : "text-slatey hover:text-ink"}`;
   return (
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-black/5">
-      <div className="container-x flex items-center justify-between h-[68px]">
+      <div className="container-x flex items-center justify-between h-[108px]">
         <Link to="/" className="flex items-center gap-3">
-          <Logo h="h-12" />
+          <Logo h="h-[88px]" />
           <span className="hidden sm:block leading-none border-l border-black/10 pl-3">
-            <span className="block text-[11px] font-bold text-brand uppercase tracking-[0.18em]">Roofing Done Right</span>
-            <span className="block text-[11px] font-semibold text-slatey uppercase tracking-[0.14em] mt-0.5">Shelby Twp, MI</span>
+            <span className="block text-xs font-bold text-brand uppercase tracking-[0.18em]">Roofing Done Right</span>
+            <span className="block text-[11px] font-semibold text-slatey uppercase tracking-[0.14em] mt-1">Shelby Twp, MI</span>
           </span>
         </Link>
         <nav className="hidden lg:flex items-center gap-7">
@@ -173,11 +188,17 @@ function AddressAutocomplete({ value, onChange, onSelect }: { value: string; onC
     if (value.trim().length < 3) { setSug([]); return; }
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(async () => {
+      if (!underLookupLimit()) { setSug([]); return; }
       try {
         let list: string[] = [];
-        if (GEOAPIFY_KEY) {
+        if (MAPBOX_TOKEN) {
+          // Mapbox Geocoding — best house-number accuracy, restricted to Michigan bounding box
+          const r = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(value)}.json?access_token=${MAPBOX_TOKEN}&autocomplete=true&country=us&types=address&bbox=${MI_BBOX}&limit=6`);
+          const d = await r.json();
+          list = (d.features || []).map((f: any) => f.place_name.replace(/, United States$/, "") as string);
+        } else if (GEOAPIFY_KEY) {
           // Geoapify autocomplete — returns real house numbers, restricted to Michigan (free key, no card)
-          const r = await fetch(`https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(value)}&filter=rect:-90.42,41.70,-82.12,48.31&format=json&limit=6&apiKey=${GEOAPIFY_KEY}`);
+          const r = await fetch(`https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(value)}&filter=rect:${MI_BBOX}&format=json&limit=6&apiKey=${GEOAPIFY_KEY}`);
           const d = await r.json();
           list = (d.results || [])
             .filter((f: any) => f.state_code === "MI" || f.state === "Michigan")
