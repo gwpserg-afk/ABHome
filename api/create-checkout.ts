@@ -1,13 +1,13 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import Stripe from "stripe";
 
-// Secret key lives ONLY in the server environment (Vercel env / local .env) — never in client code or git.
-const secret = process.env.STRIPE_SECRET_KEY || "";
-const stripe = new Stripe(secret);
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+
+  // Secret key lives ONLY in the server environment (Vercel env / local .env) — never in client code or git.
+  const secret = process.env.STRIPE_SECRET_KEY || "";
   if (!secret) return res.status(500).json({ error: "Payments are not configured yet." });
+  const stripe = new Stripe(secret);
 
   try {
     const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body || {};
