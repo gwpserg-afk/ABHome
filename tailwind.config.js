@@ -19,6 +19,7 @@ export default {
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', "system-ui", "sans-serif"],
         display: ['"Plus Jakarta Sans"', "system-ui", "sans-serif"],
+        hand: ['"Caveat"', "cursive"],
       },
       boxShadow: {
         card: "0 4px 24px -8px rgb(14 18 23 / 0.12)",

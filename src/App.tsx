@@ -5,6 +5,7 @@ import {
   Menu, X, Home, Hammer, Droplets, PaintRoller, Wrench,
   CheckCircle2, Calculator, Sparkles, Award, ThumbsUp,
   LayoutDashboard, DollarSign, TrendingUp, Users, CreditCard, ArrowLeft, Percent,
+  Lock, Eye, EyeOff,
 } from "lucide-react";
 
 const PHONE = "(810) 627-4895";
@@ -108,6 +109,7 @@ function ScrollToTop() {
 function Header() {
   const [open, setOpen] = useState(false);
   const nav = [
+    ["Home", "/"],
     ["Services", "/services"],
     ["Gallery", "/gallery"],
     ["Estimate", "/estimate"],
@@ -128,7 +130,7 @@ function Header() {
         </Link>
         <nav className="hidden lg:flex items-center gap-7">
           {nav.map(([l, h]) => (
-            <NavLink key={h} to={h} className={linkCls}>{l}</NavLink>
+            <NavLink key={h} to={h} end={h === "/"} className={linkCls}>{l}</NavLink>
           ))}
         </nav>
         <div className="hidden lg:flex items-center gap-3">
@@ -147,7 +149,7 @@ function Header() {
         <div className="lg:hidden border-t border-black/5 bg-white">
           <div className="container-x py-4 flex flex-col gap-1">
             {nav.map(([l, h]) => (
-              <NavLink key={h} to={h} onClick={() => setOpen(false)} className="py-2.5 font-semibold text-slatey">{l}</NavLink>
+              <NavLink key={h} to={h} end={h === "/"} onClick={() => setOpen(false)} className="py-2.5 font-semibold text-slatey">{l}</NavLink>
             ))}
             <a href={PHONE_HREF} className="mt-2 inline-flex items-center justify-center gap-2 bg-ink text-white font-bold px-4 py-3 rounded-lg">
               <Phone className="w-4 h-4" /> {PHONE}
@@ -588,6 +590,7 @@ function MeetTheTeam() {
             <p>A&amp;B started the honest way — showing up on time, doing the job right, and treating every home like it's our own. No pushy sales, no crews that vanish halfway through.</p>
             <p>When you call, you get Brad and a crew that's been doing this for years. We'll walk your roof with you, tell you straight what it needs, and give you a fair price.</p>
           </div>
+          <p className="font-hand text-4xl text-brand mt-6 leading-none">— Brad &amp; the A&amp;B crew</p>
           <div className="mt-7 flex flex-wrap gap-x-6 gap-y-3 text-sm font-semibold text-ink">
             <span className="inline-flex items-center gap-2"><ThumbsUp className="w-4 h-4 text-brand" /> Family owned</span>
             <span className="inline-flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-brand" /> Licensed &amp; insured</span>
@@ -657,6 +660,11 @@ function Financing() {
 /* ---------------- Contact ---------------- */
 function ContactForm() {
   const [done, setDone] = useState(false);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [message, setMessage] = useState("");
+
   if (done) {
     return (
       <div className="mt-6 rounded-xl bg-brand/10 border border-brand/25 p-8 text-center">
@@ -667,26 +675,26 @@ function ContactForm() {
     );
   }
   const field = "w-full rounded-lg bg-cloud border border-black/10 px-4 py-3 text-sm text-ink placeholder:text-slatey/50 focus:outline-none focus:border-brand focus:bg-white transition";
+  const mapSrc = `https://www.google.com/maps?q=${encodeURIComponent(address)}&t=k&z=20&output=embed`;
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        const fd = new FormData(e.currentTarget);
-        submitLead({
-          name: (fd.get("name") as string) || "",
-          phone: (fd.get("phone") as string) || "",
-          address: (fd.get("address") as string) || "",
-          message: (fd.get("message") as string) || "",
-          service: "Contact form",
-        });
+        submitLead({ name, phone, address, message, service: "Contact form" });
         setDone(true);
       }}
       className="mt-6 space-y-3"
     >
-      <input name="name" required placeholder="Name" className={field} />
-      <input name="phone" required type="tel" placeholder="Phone" className={field} />
-      <input name="address" placeholder="Property address" className={field} />
-      <textarea name="message" rows={3} placeholder="What do you need? (e.g. new roof, leak repair, gutters)" className={field} />
+      <input value={name} onChange={(e) => setName(e.target.value)} required placeholder="Name" className={field} />
+      <input value={phone} onChange={(e) => setPhone(e.target.value)} required type="tel" placeholder="Phone" className={field} />
+      <AddressAutocomplete value={address} onChange={setAddress} onSelect={setAddress} />
+      {address.trim().length > 6 && (
+        <div className="rounded-lg overflow-hidden border border-black/10 shadow-sm">
+          <iframe title="Your property from above" src={mapSrc} className="w-full h-44 border-0" loading="lazy" />
+          <p className="text-[11px] text-slatey/70 px-3 py-2 bg-cloud">📍 That's your roof — we'll measure it exactly on your free inspection.</p>
+        </div>
+      )}
+      <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={3} placeholder="What do you need? (e.g. new roof, leak repair, gutters)" className={field} />
       <button type="submit" className="w-full inline-flex items-center justify-center gap-2 bg-brand hover:bg-brand-dark text-white font-bold px-6 py-3.5 rounded-lg transition-colors">
         Get My Free Estimate <ArrowRight className="w-4 h-4" />
       </button>
@@ -696,11 +704,12 @@ function ContactForm() {
 
 function Contact() {
   return (
-    <section id="contact" className="section scroll-mt-20">
+    <section id="contact" className="section bg-cream scroll-mt-20">
       <div className="container-x grid lg:grid-cols-2 gap-12 items-start">
         <div>
           <p className="text-brand font-bold uppercase tracking-[0.2em] text-xs mb-3">Get In Touch</p>
           <h2 className="text-4xl md:text-5xl text-ink">Free estimates, 7 days a week.</h2>
+          <p className="font-hand text-3xl text-brand mt-3 leading-none">a real person picks up — promise.</p>
           <p className="mt-5 text-slatey text-lg">
             Run by Brad and a hard-working local crew, A&amp;B has earned <b className="text-ink">50 five-star reviews</b> the
             honest way — showing up on time, doing the job right, and treating your home like our own.
@@ -958,22 +967,29 @@ function InvoiceGenerator() {
 type RealLead = { id?: string | number; name?: string; phone?: string; email?: string; address?: string; service?: string; message?: string; estimate?: string; created_at?: string };
 
 function AdminLogin({ value, onChange, onSubmit, err, loading }: { value: string; onChange: (v: string) => void; onSubmit: () => void; err: string; loading: boolean }) {
+  const [show, setShow] = useState(false);
   return (
-    <div className="min-h-screen bg-ink text-white grid place-items-center px-5">
+    <div className="min-h-screen bg-cream grid place-items-center px-5 py-12">
       <div className="w-full max-w-sm">
-        <div className="flex flex-col items-center text-center">
-          <Logo h="h-14" chip />
-          <h1 className="font-display text-2xl font-extrabold mt-5">Owner <span className="text-brand-soft">Dashboard</span></h1>
-          <p className="text-white/60 text-sm mt-1">Enter your password to continue.</p>
+        <div className="bg-white rounded-2xl shadow-lift border border-black/5 p-8">
+          <div className="flex justify-center mb-6"><Logo h="h-12" /></div>
+          <h1 className="font-display text-2xl font-extrabold text-ink">Sign in</h1>
+          <p className="text-slatey text-sm mt-1">Owner dashboard — enter your password to continue.</p>
+          <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} className="mt-6 space-y-3">
+            <div className="relative">
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slatey/50" />
+              <input autoFocus type={show ? "text" : "password"} value={value} onChange={(e) => onChange(e.target.value)} placeholder="Password" className="w-full rounded-lg bg-cloud border border-black/10 pl-10 pr-10 py-3.5 text-sm text-ink placeholder:text-slatey/50 focus:outline-none focus:border-brand focus:bg-white transition" />
+              <button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slatey/50 hover:text-ink" aria-label="Toggle password">
+                {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            <button type="submit" disabled={loading} className="w-full inline-flex items-center justify-center gap-2 bg-ink hover:bg-charcoal text-white font-bold px-6 py-3.5 rounded-lg transition-colors disabled:opacity-60">
+              {loading ? "Signing in…" : "Log in"}
+            </button>
+            {err && <p className="text-[13px] text-red-600 text-center">{err}</p>}
+          </form>
         </div>
-        <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} className="mt-6 space-y-3">
-          <input autoFocus type="password" value={value} onChange={(e) => onChange(e.target.value)} placeholder="Password" className="w-full rounded-lg bg-white/10 border border-white/15 px-4 py-3.5 text-sm placeholder:text-white/40 focus:outline-none focus:border-brand" />
-          <button type="submit" disabled={loading} className="w-full inline-flex items-center justify-center gap-2 bg-brand hover:bg-brand-dark font-bold px-6 py-3.5 rounded-lg transition-colors disabled:opacity-60">
-            {loading ? "Checking…" : "Log in"} <ArrowRight className="w-4 h-4" />
-          </button>
-          {err && <p className="text-[13px] text-red-300 text-center">{err}</p>}
-        </form>
-        <Link to="/" className="mt-6 flex items-center justify-center gap-1.5 text-sm text-white/50 hover:text-white"><ArrowLeft className="w-4 h-4" /> Back to site</Link>
+        <Link to="/" className="mt-5 flex items-center justify-center gap-1.5 text-sm text-slatey hover:text-ink"><ArrowLeft className="w-4 h-4" /> Back to site</Link>
       </div>
     </div>
   );
