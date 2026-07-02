@@ -172,11 +172,12 @@ function TrustBar() {
 }
 
 /* ---------------- Estimator ---------------- */
+// Priced so a typical ~1,400 sq ft roof (arch shingles) lands ~$7,000–$11,000 (mid ~$9,000), per Brad.
 const MATERIALS = [
-  { key: "arch", label: "Architectural Shingles", note: "Most popular", low: 4.75, high: 6.25 },
-  { key: "3tab", label: "3-Tab Shingles", note: "Budget-friendly", low: 3.5, high: 4.5 },
-  { key: "premium", label: "Premium / Designer Shingles", note: "Top-tier curb appeal", low: 6.5, high: 9 },
-  { key: "flat", label: "Flat / Rubber (EPDM)", note: "Low-slope roofs", low: 5.5, high: 8 },
+  { key: "arch", label: "Architectural Shingles", note: "Most popular", low: 5.0, high: 7.85 },
+  { key: "3tab", label: "3-Tab Shingles", note: "Budget-friendly", low: 4.0, high: 5.75 },
+  { key: "premium", label: "Premium / Designer Shingles", note: "Top-tier curb appeal", low: 8.5, high: 12.5 },
+  { key: "flat", label: "Flat / Rubber (EPDM)", note: "Low-slope roofs", low: 6.5, high: 9.5 },
 ];
 
 function AddressAutocomplete({ value, onChange, onSelect }: { value: string; onChange: (v: string) => void; onSelect: (v: string) => void }) {
@@ -249,7 +250,7 @@ function AddressAutocomplete({ value, onChange, onSelect }: { value: string; onC
 function Estimator() {
   const [address, setAddress] = useState("");
   const [found, setFound] = useState(false);
-  const [size, setSize] = useState(2000);
+  const [size, setSize] = useState(1400);
   const [mat, setMat] = useState("arch");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -670,25 +671,39 @@ function PageHead({ label, title, sub }: { label: string; title: string; sub?: s
 }
 
 /* ---------------- Pages ---------------- */
+function usePageMeta(title: string, desc?: string) {
+  useEffect(() => {
+    document.title = title;
+    if (desc) document.querySelector('meta[name="description"]')?.setAttribute("content", desc);
+  }, [title, desc]);
+}
+
 function HomePage() {
+  usePageMeta("A&B Home Improvement — Roofing Done Right | Shelby Township, MI", "Metro Detroit's top-rated roofer. New roofs, repairs, gutters & siding. 4.8★ (50 reviews), licensed & insured, financing available. Free instant estimate from your address.");
   return (<><Hero /><TrustBar /><Services /><Reviews /><CtaBand /><Contact /></>);
 }
 function ServicesPage() {
+  usePageMeta("Roofing, Gutters & Siding Services | A&B Home Improvement — Shelby Twp, MI", "Roofing, gutters, siding, painting & more from Metro Detroit's top-rated local crew. Licensed & insured. Get a free quote today.");
   return (<><PageHead label="What We Do" title="Roofing first — and the whole house too." sub="One trusted local crew for roofing, gutters, siding, and more." /><Services /><CtaBand /></>);
 }
 function EstimatePage() {
+  usePageMeta("Free Instant Roof Estimate from Your Address | A&B Home Improvement", "See your roof from above and get an instant price range with financing — no calls, no pressure. Serving Shelby Township & Metro Detroit.");
   return (<><Estimator /></>);
 }
 function GalleryPage() {
+  usePageMeta("Roofing Project Gallery | A&B Home Improvement — Metro Detroit", "See real roofing jobs, tear-offs, and finished shingle roofs from A&B Home Improvement across Metro Detroit.");
   return (<><PageHead label="Our Work" title="See the quality for yourself." sub="Real jobs from real Metro Detroit homeowners." /><Gallery /><CtaBand /></>);
 }
 function ReviewsPage() {
+  usePageMeta("Reviews — 4.8★ from 50 Homeowners | A&B Home Improvement", "Read why Shelby Township homeowners rate A&B Home Improvement 4.8 stars. Top 3 Roofer 2025. Honest pricing, quality work.");
   return (<><PageHead label="Reviews" title="Trusted by 50 happy neighbors." sub="4.8 stars and a Top 3 Roofer award in Shelby Township." /><Reviews /><CtaBand /></>);
 }
 function FinancingPage() {
+  usePageMeta("Roof Financing — $0 Down, Low Monthly Payments | A&B Home Improvement", "Finance your new roof with $0-down options and flexible monthly plans. Fast approval. Get your exact monthly payment with our instant estimator.");
   return (<><Financing /><Contact /></>);
 }
 function ContactPage() {
+  usePageMeta("Contact — Free Estimates 7 Days a Week | A&B Home Improvement", "Call, text, or message A&B Home Improvement in Shelby Township, MI. Free estimates, usually same-day response.");
   return (<><PageHead label="Get In Touch" title="Let's talk about your roof." sub="Call, text, or send us a note — we usually reply the same day." /><Contact /></>);
 }
 
