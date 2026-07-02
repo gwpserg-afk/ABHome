@@ -120,9 +120,9 @@ function Header() {
     `text-sm font-semibold transition-colors ${isActive ? "text-brand" : "text-slatey hover:text-ink"}`;
   return (
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-black/5">
-      <div className="container-x flex items-center justify-between h-[108px]">
+      <div className="container-x flex items-center justify-between h-[92px]">
         <Link to="/" className="flex items-center gap-3">
-          <Logo h="h-[88px]" />
+          <Logo h="h-16" />
           <span className="hidden sm:block leading-none border-l border-black/10 pl-3">
             <span className="block text-xs font-bold text-brand uppercase tracking-[0.18em]">Roofing Done Right</span>
             <span className="block text-[11px] font-semibold text-slatey uppercase tracking-[0.14em] mt-1">Shelby Twp, MI</span>
@@ -606,6 +606,32 @@ function MeetTheTeam() {
   );
 }
 
+/* ---------------- Areas served ---------------- */
+const SERVICE_AREAS = [
+  "Shelby Township", "Sterling Heights", "Warren", "Troy", "Rochester Hills", "Rochester",
+  "Romeo", "Bloomfield Hills", "Utica", "Macomb Twp", "Clinton Twp", "Washington Twp",
+  "Chesterfield", "Roseville", "St. Clair Shores", "Madison Heights",
+];
+
+function AreasServed() {
+  return (
+    <section className="section bg-white scroll-mt-20">
+      <div className="container-x text-center">
+        <p className="text-brand font-bold uppercase tracking-[0.2em] text-xs mb-3">Service Area</p>
+        <h2 className="text-4xl md:text-5xl text-ink">Proudly serving Metro Detroit</h2>
+        <p className="mt-4 text-slatey text-lg max-w-2xl mx-auto">From Shelby Township to Troy, Warren to Romeo — if you're in Macomb or Oakland County, we've got your roof covered.</p>
+        <div className="mt-9 flex flex-wrap justify-center gap-2.5 max-w-4xl mx-auto">
+          {SERVICE_AREAS.map((c) => (
+            <span key={c} className="inline-flex items-center gap-1.5 bg-cloud border border-black/5 rounded-full px-4 py-2 text-sm font-semibold text-ink">
+              <MapPin className="w-3.5 h-3.5 text-brand" /> {c}
+            </span>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ---------------- Financing ---------------- */
 function Financing() {
   return (
@@ -824,7 +850,7 @@ function usePageMeta(title: string, desc?: string) {
 
 function HomePage() {
   usePageMeta("A&B Home Improvement — Roofing Done Right | Shelby Township, MI", "Metro Detroit's top-rated roofer. New roofs, repairs, gutters & siding. 4.8★ (50 reviews), licensed & insured, financing available. Free instant estimate from your address.");
-  return (<><Hero /><TrustBar /><Services /><MeetTheTeam /><Reviews /><CtaBand /><Contact /></>);
+  return (<><Hero /><TrustBar /><Services /><MeetTheTeam /><Reviews /><AreasServed /><CtaBand /><Contact /></>);
 }
 function ServicesPage() {
   usePageMeta("Roofing, Gutters & Home Services | A&B Home Improvement — Shelby Twp, MI", "Roofing, gutters, painting & more from Metro Detroit's top-rated local crew. Licensed & insured. Flexible financing available. Get a free quote today.");

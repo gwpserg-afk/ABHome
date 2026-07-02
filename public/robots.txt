@@ -1,0 +1,19 @@
+# A&B Home Improvement — allow all search engines and AI assistants
+User-agent: *
+Allow: /
+
+# AI assistants (ChatGPT, Perplexity, Claude, Google AI) — explicitly welcome
+User-agent: GPTBot
+Allow: /
+User-agent: OAI-SearchBot
+Allow: /
+User-agent: ChatGPT-User
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+User-agent: ClaudeBot
+Allow: /
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://www.abroofingmi.com/sitemap.xml
