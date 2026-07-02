@@ -2,9 +2,9 @@ import { useState, useEffect, useRef, type FormEvent } from "react";
 import { BrowserRouter, Routes, Route, Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import {
   Phone, Star, ShieldCheck, BadgeCheck, Wallet, MapPin, Clock, ArrowRight,
-  Menu, X, Home, Hammer, Droplets, PaintRoller, Wrench, Layers,
-  CheckCircle2, Calculator, Sparkles, Award, ThumbsUp, ChevronRight,
-  User, LayoutDashboard, DollarSign, TrendingUp, Users, CreditCard, ArrowLeft, Percent,
+  Menu, X, Home, Hammer, Droplets, PaintRoller, Wrench,
+  CheckCircle2, Calculator, Sparkles, Award, ThumbsUp,
+  LayoutDashboard, DollarSign, TrendingUp, Users, CreditCard, ArrowLeft, Percent,
 } from "lucide-react";
 
 const PHONE = "(810) 627-4895";
@@ -109,10 +109,9 @@ function Header() {
   const [open, setOpen] = useState(false);
   const nav = [
     ["Services", "/services"],
-    ["Estimate", "/estimate"],
     ["Gallery", "/gallery"],
+    ["Estimate", "/estimate"],
     ["Reviews", "/reviews"],
-    ["Financing", "/financing"],
     ["Contact", "/contact"],
   ];
   const linkCls = ({ isActive }: { isActive: boolean }) =>
@@ -139,10 +138,6 @@ function Header() {
           <Link to="/estimate" className="inline-flex items-center gap-1.5 bg-brand hover:bg-brand-dark text-white font-bold text-sm px-4 py-2.5 rounded-lg shadow-brand transition-colors">
             Free Estimate
           </Link>
-          <Link to="/admin" title="Admin dashboard" className="flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full border border-black/10 hover:border-brand hover:bg-cloud transition-colors">
-            <span className="grid place-items-center w-7 h-7 rounded-full bg-ink text-white"><User className="w-4 h-4" /></span>
-            <span className="text-sm font-bold text-ink">Admin</span>
-          </Link>
         </div>
         <button onClick={() => setOpen(!open)} className="lg:hidden p-2 text-ink" aria-label="Menu">
           {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -154,7 +149,6 @@ function Header() {
             {nav.map(([l, h]) => (
               <NavLink key={h} to={h} onClick={() => setOpen(false)} className="py-2.5 font-semibold text-slatey">{l}</NavLink>
             ))}
-            <Link to="/admin" onClick={() => setOpen(false)} className="py-2.5 font-semibold text-slatey flex items-center gap-2"><User className="w-4 h-4" /> Admin Dashboard</Link>
             <a href={PHONE_HREF} className="mt-2 inline-flex items-center justify-center gap-2 bg-ink text-white font-bold px-4 py-3 rounded-lg">
               <Phone className="w-4 h-4" /> {PHONE}
             </a>
@@ -234,7 +228,8 @@ function TrustBar() {
 // Priced so a typical ~1,400 sq ft roof (arch shingles) lands ~$7,000–$11,000 (mid ~$9,000), per Brad.
 const MATERIALS = [
   { key: "arch", label: "Architectural Shingles", note: "Most popular", low: 5.0, high: 7.85 },
-  { key: "3tab", label: "3-Tab Shingles", note: "Budget-friendly", low: 4.0, high: 5.75 },
+  { key: "dimensional", label: "Dimensional Shingles", note: "Great value & look", low: 5.75, high: 8.5 },
+  { key: "impact", label: "Impact-Resistant (Class 4)", note: "Hail & storm rated", low: 7.0, high: 10.0 },
   { key: "premium", label: "Premium / Designer Shingles", note: "Top-tier curb appeal", low: 8.5, high: 12.5 },
   { key: "flat", label: "Flat / Rubber (EPDM)", note: "Low-slope roofs", low: 6.5, high: 9.5 },
 ];
@@ -316,10 +311,11 @@ function Estimator() {
   const [done, setDone] = useState(false);
 
   const m = MATERIALS.find((x) => x.key === mat)!;
-  const low = Math.round((size * m.low) / 100) * 100;
-  const high = Math.round((size * m.high) / 100) * 100;
+  const round500 = (n: number) => Math.round(n / 500) * 500;
+  const low = round500(size * m.low);
+  const high = round500(size * m.high);
   const mid = Math.round((low + high) / 2);
-  const monthly = Math.round(mid / 60);
+  const monthly = Math.round(mid / 60 / 10) * 10;
   const fmt = (n: number) => "$" + n.toLocaleString();
   const mapSrc = `https://www.google.com/maps?q=${encodeURIComponent(address)}&t=k&z=20&output=embed`;
   const lookup = () => { if (address.trim().length > 5) setFound(true); };
@@ -420,36 +416,46 @@ function Estimator() {
 
 /* ---------------- Services ---------------- */
 const SERVICES = [
-  { icon: Home, t: "Roofing", d: "New roofs, full replacements, tear-offs & repairs. Shingle specialists.", big: true },
   { icon: Droplets, t: "Gutters", d: "Seamless gutters, guards & downspouts to protect your home." },
-  { icon: Layers, t: "Siding", d: "Vinyl & fiber-cement siding that lasts and looks sharp." },
   { icon: PaintRoller, t: "Painting", d: "Interior & exterior painting, clean lines, quality finish." },
   { icon: Hammer, t: "Drywall", d: "Repairs, patches, new walls & ceilings — smooth results." },
-  { icon: Wrench, t: "Plumbing", d: "Repairs and fixes for everyday plumbing problems." },
+  { icon: Wrench, t: "Plumbing", d: "Everyday plumbing repairs and fixes, handled fast." },
 ];
 
 function Services() {
   return (
     <section id="services" className="section scroll-mt-20">
       <div className="container-x">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-5 mb-12">
-          <div className="max-w-xl">
-            <p className="text-brand font-bold uppercase tracking-[0.2em] text-xs mb-3">What We Do</p>
-            <h2 className="text-4xl md:text-5xl text-ink">Roofing first — and anything else your home needs.</h2>
-          </div>
-          <Link to="/estimate" className="inline-flex items-center gap-1.5 text-brand font-bold hover:gap-2.5 transition-all">
-            Get a free quote <ChevronRight className="w-4 h-4" />
-          </Link>
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <p className="text-brand font-bold uppercase tracking-[0.2em] text-xs mb-3">What We Do</p>
+          <h2 className="text-4xl md:text-5xl text-ink">Roofing first — and anything else your home needs.</h2>
+          <p className="mt-4 text-slatey text-lg">One local, licensed crew for the whole house — no subcontractors, no runaround.</p>
         </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+        <div className="grid lg:grid-cols-3 gap-4">
+          {/* Roofing hero card */}
+          <div className="relative lg:row-span-2 rounded-3xl overflow-hidden shadow-lift min-h-[360px] group">
+            <img src="/photos/finished-roof.png" alt="Finished shingle roof by A&B Home Improvement" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+            <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/75 to-ink/10" />
+            <div className="relative h-full flex flex-col justify-end p-7 text-white">
+              <span className="inline-flex self-start items-center gap-1.5 bg-brand text-white text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-3">Most requested</span>
+              <div className="w-12 h-12 rounded-xl bg-white/15 backdrop-blur grid place-items-center mb-3"><Home className="w-6 h-6" /></div>
+              <h3 className="font-display text-3xl font-extrabold">Roofing</h3>
+              <p className="text-white/80 mt-2 max-w-sm">New roofs, full replacements, tear-offs & repairs. Shingle specialists — built to last and done right the first time.</p>
+              <Link to="/estimate" className="mt-5 inline-flex items-center gap-2 bg-white text-ink font-bold px-5 py-3 rounded-xl w-fit hover:bg-brand hover:text-white transition-colors">
+                Get a free roof quote <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Supporting services */}
           {SERVICES.map((s) => (
-            <div key={s.t} className={`group rounded-2xl border p-6 transition-all hover:-translate-y-1 ${s.big ? "sm:col-span-2 lg:col-span-2 bg-ink text-white border-ink shadow-lift" : "bg-white border-black/5 shadow-card hover:shadow-lift"}`}>
-              <div className={`w-12 h-12 rounded-xl grid place-items-center mb-4 ${s.big ? "bg-brand text-white" : "bg-brand/10 text-brand group-hover:bg-brand group-hover:text-white"} transition-colors`}>
+            <div key={s.t} className="group rounded-3xl bg-white border border-black/5 shadow-card hover:shadow-lift hover:-translate-y-1.5 transition-all duration-300 p-7">
+              <div className="w-12 h-12 rounded-xl grid place-items-center mb-4 bg-brand/10 text-brand group-hover:bg-brand group-hover:text-white transition-colors">
                 <s.icon className="w-6 h-6" />
               </div>
-              <h3 className={`font-display text-xl font-extrabold mb-1.5 ${s.big ? "text-white" : "text-ink"}`}>{s.t}</h3>
-              <p className={`text-sm leading-relaxed ${s.big ? "text-white/70" : "text-slatey"}`}>{s.d}</p>
-              {s.big && <p className="mt-4 inline-flex items-center gap-1.5 text-brand-soft font-bold text-sm">Anything fixed — call for a quote <ArrowRight className="w-4 h-4" /></p>}
+              <h3 className="font-display text-xl font-extrabold text-ink mb-1.5">{s.t}</h3>
+              <p className="text-sm text-slatey leading-relaxed">{s.d}</p>
             </div>
           ))}
         </div>
@@ -538,8 +544,21 @@ function Reviews() {
           ))}
         </div>
         <div className="text-center mt-10">
-          <a href={GOOGLE_REVIEWS} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-ink hover:bg-slatey text-white font-bold px-7 py-3.5 rounded-xl transition-colors">
-            <Star className="w-4 h-4 fill-brand-soft text-brand-soft" /> Read all our reviews on Google <ArrowRight className="w-4 h-4" />
+          <a href={GOOGLE_REVIEWS} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2.5 bg-white hover:bg-cloud text-ink font-bold px-7 py-3.5 rounded-xl border border-black/10 shadow-card transition-colors">
+            <img src="/google-logo.png" alt="Google" className="w-5 h-5 object-contain" /> Read all our reviews on Google <ArrowRight className="w-4 h-4 text-brand" />
+          </a>
+        </div>
+
+        {/* Leave-a-review CTA — Brad can send this to past customers */}
+        <div className="mt-6 rounded-3xl bg-ink text-white p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+          <div className="absolute -top-16 -right-10 w-64 h-64 rounded-full bg-brand/20 blur-3xl" />
+          <div className="relative">
+            <div className="flex gap-0.5 mb-2">{[...Array(5)].map((_, k) => <Star key={k} className="w-5 h-5 fill-brand-soft text-brand-soft" />)}</div>
+            <h3 className="font-display text-2xl md:text-3xl font-extrabold">Had a great experience?</h3>
+            <p className="text-white/70 mt-1.5 max-w-md">It takes 30 seconds and means the world to a local family business. Leave us a quick review on Google.</p>
+          </div>
+          <a href={GOOGLE_REVIEWS} target="_blank" rel="noopener noreferrer" className="relative shrink-0 inline-flex items-center gap-2.5 bg-white hover:bg-brand hover:text-white text-ink font-bold px-7 py-4 rounded-xl transition-colors shadow-lift">
+            <img src="/google-logo.png" alt="Google" className="w-5 h-5 object-contain" /> Leave a 5-Star Review <ArrowRight className="w-4 h-4" />
           </a>
         </div>
       </div>
@@ -752,7 +771,7 @@ function Footer() {
         <div>
           <h4 className="text-white font-bold text-xs uppercase tracking-[0.2em] mb-3">Explore</h4>
           <ul className="space-y-1.5 text-sm">
-            {[["Services", "/services"], ["Instant Estimate", "/estimate"], ["Gallery", "/gallery"], ["Reviews", "/reviews"], ["Financing", "/financing"], ["Contact", "/contact"]].map(([l, h]) => (
+            {[["Services", "/services"], ["Gallery", "/gallery"], ["Instant Estimate", "/estimate"], ["Reviews", "/reviews"], ["Contact", "/contact"]].map(([l, h]) => (
               <li key={h}><Link to={h} className="hover:text-brand-soft">{l}</Link></li>
             ))}
           </ul>
@@ -799,8 +818,8 @@ function HomePage() {
   return (<><Hero /><TrustBar /><Services /><MeetTheTeam /><Reviews /><CtaBand /><Contact /></>);
 }
 function ServicesPage() {
-  usePageMeta("Roofing, Gutters & Siding Services | A&B Home Improvement — Shelby Twp, MI", "Roofing, gutters, siding, painting & more from Metro Detroit's top-rated local crew. Licensed & insured. Get a free quote today.");
-  return (<><PageHead label="What We Do" title="Roofing first — and the whole house too." sub="One trusted local crew for roofing, gutters, siding, and more." /><Services /><CtaBand /></>);
+  usePageMeta("Roofing, Gutters & Home Services | A&B Home Improvement — Shelby Twp, MI", "Roofing, gutters, painting & more from Metro Detroit's top-rated local crew. Licensed & insured. Flexible financing available. Get a free quote today.");
+  return (<><PageHead label="What We Do" title="Roofing first — and the whole house too." sub="One trusted local crew for roofing, gutters, painting, and more — with easy financing." /><Services /><Financing /><CtaBand /></>);
 }
 function EstimatePage() {
   usePageMeta("Free Instant Roof Estimate from Your Address | A&B Home Improvement", "See your roof from above and get an instant price range with financing — no calls, no pressure. Serving Shelby Township & Metro Detroit.");
@@ -813,10 +832,6 @@ function GalleryPage() {
 function ReviewsPage() {
   usePageMeta("Reviews — 4.8★ from 50 Homeowners | A&B Home Improvement", "Read why Shelby Township homeowners rate A&B Home Improvement 4.8 stars. Top 3 Roofer 2025. Honest pricing, quality work.");
   return (<><PageHead label="Reviews" title="Trusted by 50 happy neighbors." sub="4.8 stars and a Top 3 Roofer award in Shelby Township." /><Reviews /><CtaBand /></>);
-}
-function FinancingPage() {
-  usePageMeta("Roof Financing — $0 Down, Low Monthly Payments | A&B Home Improvement", "Finance your new roof with $0-down options and flexible monthly plans. Fast approval. Get your exact monthly payment with our instant estimator.");
-  return (<><Financing /><Contact /></>);
 }
 function ContactPage() {
   usePageMeta("Contact — Free Estimates 7 Days a Week | A&B Home Improvement", "Call, text, or message A&B Home Improvement in Shelby Township, MI. Free estimates, usually same-day response.");
@@ -1180,7 +1195,6 @@ export default function App() {
           <Route path="/estimate" element={<EstimatePage />} />
           <Route path="/gallery" element={<GalleryPage />} />
           <Route path="/reviews" element={<ReviewsPage />} />
-          <Route path="/financing" element={<FinancingPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/pay/success" element={<PaySuccessPage />} />
           <Route path="/pay/cancel" element={<PayCancelPage />} />
