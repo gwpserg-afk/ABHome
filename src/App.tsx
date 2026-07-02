@@ -711,6 +711,9 @@ function GetStarted() {
           <p className="text-brand font-bold uppercase tracking-[0.2em] text-xs mb-3">Get Started</p>
           <h2 className="text-4xl md:text-5xl text-ink">How would you like to begin?</h2>
           <p className="mt-4 text-slatey text-lg">Pick whatever's easiest — no pressure, no obligation.</p>
+          <div className="mt-5 inline-flex items-center gap-2 bg-brand/10 border border-brand/25 rounded-full px-4 py-2 text-sm font-bold text-brand-dark">
+            <Wallet className="w-4 h-4 text-brand" /> $0-Down financing available on every option — pay monthly with Affirm or Klarna
+          </div>
         </div>
         <div className="grid md:grid-cols-3 gap-4">
           <div className={`rounded-3xl border p-7 transition-all ${visit ? "border-brand bg-white shadow-lift" : "bg-white border-black/5 shadow-card hover:shadow-lift hover:-translate-y-1"}`}>
@@ -996,7 +999,8 @@ function SiteLayout() {
 }
 
 /* ---------------- Admin dashboard ---------------- */
-const LEADS = [
+type PipeRow = { name: string; address: string; service: string; est: number; cost: number; plan: string; paid: string; status: string; date: string };
+const LEADS: PipeRow[] = [
   {
     name: "Sarah Whitmore", address: "57559 Yorkshire Dr, Shelby Twp", service: "Full Roof Replacement",
     est: 14200, cost: 8600, plan: "24-mo financing", paid: "Financing (approved)", status: "Won", date: "Jun 26",
@@ -1112,9 +1116,6 @@ function AdminLogin({ value, onChange, onSubmit, err, loading }: { value: string
 
 function AdminPage() {
   const money = (n: number) => "$" + n.toLocaleString();
-  const pipeline = LEADS.reduce((s, l) => s + l.est, 0);
-  const totalMargin = LEADS.reduce((s, l) => s + (l.est - l.cost), 0);
-  const avgMargin = Math.round((totalMargin / pipeline) * 100);
 
   const [pw, setPw] = useState("");
   const [authed, setAuthed] = useState(false);
@@ -1122,6 +1123,17 @@ function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [realLeads, setRealLeads] = useState<RealLead[]>([]);
   const [configured, setConfigured] = useState(false);
+
+  // Editable pipeline — Brad can change any price/cost/status and the whole dashboard updates live.
+  const [rows, setRows] = useState<PipeRow[]>(() => LEADS.map((l) => ({ ...l })));
+  const [editing, setEditing] = useState(false);
+  const updateRow = (i: number, patch: Partial<PipeRow>) =>
+    setRows((rs) => rs.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
+  const numCls = "w-24 rounded-md border border-black/15 px-2 py-1 text-sm text-right focus:outline-none focus:border-brand";
+  const txtCls = "w-full min-w-[110px] rounded-md border border-black/15 px-2 py-1 text-sm focus:outline-none focus:border-brand";
+  const pipeline = rows.reduce((s, l) => s + l.est, 0);
+  const totalMargin = rows.reduce((s, l) => s + (l.est - l.cost), 0);
+  const avgMargin = pipeline ? Math.round((totalMargin / pipeline) * 100) : 0;
 
   const verify = async (k: string, silent = false) => {
     setLoading(true); if (!silent) setErr("");
@@ -1255,9 +1267,11 @@ function AdminPage() {
           <div className="flex items-center justify-between px-6 py-5 border-b border-black/5">
             <div>
               <h2 className="font-display text-xl font-extrabold text-ink">Leads &amp; Jobs</h2>
-              <p className="text-sm text-slatey">Every estimate, cost, margin, and how they paid.</p>
+              <p className="text-sm text-slatey">Edit any price, cost, or status — the totals above update instantly.</p>
             </div>
-            <span className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-brand"><Sparkles className="w-4 h-4" /> Auto-saved from the site</span>
+            <button onClick={() => setEditing((e) => !e)} className={`inline-flex items-center gap-1.5 text-sm font-bold px-4 py-2 rounded-lg transition-colors ${editing ? "bg-brand text-white hover:bg-brand-dark" : "bg-cloud text-ink hover:bg-black/5"}`}>
+              {editing ? <><CheckCircle2 className="w-4 h-4" /> Done</> : "Edit prices"}
+            </button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -1274,31 +1288,39 @@ function AdminPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-black/5">
-                {LEADS.map((l) => {
+                {rows.map((l, i) => {
                   const margin = l.est - l.cost;
-                  const pct = Math.round((margin / l.est) * 100);
+                  const pct = l.est ? Math.round((margin / l.est) * 100) : 0;
                   return (
-                    <tr key={l.name} className="hover:bg-cloud/60 transition-colors">
+                    <tr key={i} className="hover:bg-cloud/60 transition-colors align-top">
                       <td className="px-6 py-4">
                         <div className="font-bold text-ink">{l.name}</div>
                         <div className="text-[12px] text-slatey flex items-center gap-1 mt-0.5"><MapPin className="w-3 h-3" /> {l.address}</div>
                         <div className="text-[11px] text-slatey/60 mt-0.5">{l.date}</div>
                       </td>
                       <td className="px-4 py-4 text-slatey">{l.service}</td>
-                      <td className="px-4 py-4 text-right font-bold text-ink">{money(l.est)}</td>
-                      <td className="px-4 py-4 text-right text-slatey">{money(l.cost)}</td>
+                      <td className="px-4 py-4 text-right font-bold text-ink">
+                        {editing ? <input type="number" value={l.est} onChange={(e) => updateRow(i, { est: +e.target.value })} className={numCls} /> : money(l.est)}
+                      </td>
+                      <td className="px-4 py-4 text-right text-slatey">
+                        {editing ? <input type="number" value={l.cost} onChange={(e) => updateRow(i, { cost: +e.target.value })} className={numCls} /> : money(l.cost)}
+                      </td>
                       <td className="px-4 py-4 text-right">
-                        <div className="font-bold text-green-600">{money(margin)}</div>
+                        <div className={`font-bold ${margin >= 0 ? "text-green-600" : "text-red-600"}`}>{money(margin)}</div>
                         <div className="text-[11px] text-slatey/70">{pct}% margin</div>
                       </td>
                       <td className="px-4 py-4">
-                        <span className="inline-flex items-center gap-1.5 text-slatey"><Wallet className="w-3.5 h-3.5 text-brand" /> {l.plan}</span>
+                        {editing ? <input value={l.plan} onChange={(e) => updateRow(i, { plan: e.target.value })} className={txtCls} /> : <span className="inline-flex items-center gap-1.5 text-slatey"><Wallet className="w-3.5 h-3.5 text-brand" /> {l.plan}</span>}
                       </td>
                       <td className="px-4 py-4">
-                        <span className="inline-flex items-center gap-1.5 text-slatey"><CreditCard className="w-3.5 h-3.5 text-brand" /> {l.paid}</span>
+                        {editing ? <input value={l.paid} onChange={(e) => updateRow(i, { paid: e.target.value })} className={txtCls} /> : <span className="inline-flex items-center gap-1.5 text-slatey"><CreditCard className="w-3.5 h-3.5 text-brand" /> {l.paid}</span>}
                       </td>
                       <td className="px-4 py-4">
-                        <span className={`inline-block text-[12px] font-bold px-2.5 py-1 rounded-full ${statusStyle[l.status]}`}>{l.status}</span>
+                        {editing ? (
+                          <select value={l.status} onChange={(e) => updateRow(i, { status: e.target.value })} className={txtCls}>
+                            <option>New Lead</option><option>In Progress</option><option>Won</option>
+                          </select>
+                        ) : <span className={`inline-block text-[12px] font-bold px-2.5 py-1 rounded-full ${statusStyle[l.status]}`}>{l.status}</span>}
                       </td>
                     </tr>
                   );
