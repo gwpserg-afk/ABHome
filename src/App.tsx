@@ -5,7 +5,7 @@ import {
   Menu, X, Home, Hammer, Droplets, PaintRoller, Wrench,
   CheckCircle2, Calculator, Sparkles, Award, ThumbsUp,
   LayoutDashboard, DollarSign, TrendingUp, Users, CreditCard, ArrowLeft, Percent,
-  Lock, Eye, EyeOff,
+  Lock, Eye, EyeOff, Calendar,
 } from "lucide-react";
 
 const PHONE = "(810) 627-4895";
@@ -185,7 +185,7 @@ function Hero() {
             <span className="inline-flex items-center gap-2 font-extrabold text-white text-lg">
               <Wallet className="w-5 h-5 text-brand-soft" /> $0 Down Financing
             </span>
-            <span className="text-white/70 text-sm">Get your roof now, pay monthly — as low as <b className="text-brand-soft">~$150/mo</b>. Approval in minutes.</span>
+            <span className="text-white/70 text-sm">Get your roof now, pay monthly with <b className="text-brand-soft">Affirm</b> or <b className="text-brand-soft">Klarna</b> — quick approval, flexible terms.</span>
           </div>
 
           <div className="mt-7 flex flex-col sm:flex-row gap-3">
@@ -325,8 +325,6 @@ function Estimator() {
   const round500 = (n: number) => Math.round(n / 500) * 500;
   const low = round500(size * m.low);
   const high = round500(size * m.high);
-  const mid = Math.round((low + high) / 2);
-  const monthly = Math.round(mid / 60 / 10) * 10;
   const fmt = (n: number) => "$" + n.toLocaleString();
   const mapSrc = `https://www.google.com/maps?q=${encodeURIComponent(address)}&t=k&z=20&output=embed`;
   const lookup = () => { if (address.trim().length > 5) setFound(true); };
@@ -389,8 +387,8 @@ function Estimator() {
               <div className="mt-4 rounded-xl bg-white/5 border border-white/10 p-3.5 flex items-center gap-3">
                 <Wallet className="w-6 h-6 text-brand-soft shrink-0" />
                 <div>
-                  <div className="text-sm">Financing from <b className="text-brand-soft text-base">{fmt(monthly)}/mo</b></div>
-                  <div className="text-[11px] text-white/50">Flexible plans · quick approval · $0-down options</div>
+                  <div className="text-sm"><b className="text-brand-soft text-base">$0-Down Monthly Financing</b></div>
+                  <div className="text-[11px] text-white/50">Pay over time with Affirm or Klarna · quick approval</div>
                 </div>
               </div>
 
@@ -660,7 +658,7 @@ function Financing() {
             ))}
           </ul>
           <Link to="/estimate" className="mt-8 inline-flex items-center gap-2 bg-brand hover:bg-brand-dark font-bold px-7 py-4 rounded-xl shadow-brand transition-colors">
-            See my monthly payment <ArrowRight className="w-5 h-5" />
+            See my financing options <ArrowRight className="w-5 h-5" />
           </Link>
         </div>
         <div className="bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur">
@@ -687,6 +685,88 @@ function Financing() {
           </div>
           <p className="text-[11px] text-white/45 mt-4 leading-relaxed">Financing offered through our lending partners, subject to credit approval. $0-down and multiple term options available — we'll match you to the right plan.</p>
         </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------------- Get started (3 paths) ---------------- */
+function GetStarted() {
+  const [visit, setVisit] = useState(false);
+  const [done, setDone] = useState(false);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [when, setWhen] = useState("");
+  const field = "w-full rounded-lg bg-white border border-black/10 px-4 py-3 text-sm text-ink placeholder:text-slatey/50 focus:outline-none focus:border-brand transition";
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    submitLead({ name, phone, address, service: "In-home inspection request", message: when ? `Preferred time: ${when}` : "" });
+    setDone(true);
+  };
+  return (
+    <section id="get-started" className="section bg-cream scroll-mt-20">
+      <div className="container-x">
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <p className="text-brand font-bold uppercase tracking-[0.2em] text-xs mb-3">Get Started</p>
+          <h2 className="text-4xl md:text-5xl text-ink">How would you like to begin?</h2>
+          <p className="mt-4 text-slatey text-lg">Pick whatever's easiest — no pressure, no obligation.</p>
+        </div>
+        <div className="grid md:grid-cols-3 gap-4">
+          <div className={`rounded-3xl border p-7 transition-all ${visit ? "border-brand bg-white shadow-lift" : "bg-white border-black/5 shadow-card hover:shadow-lift hover:-translate-y-1"}`}>
+            <div className="w-12 h-12 rounded-xl grid place-items-center mb-4 bg-brand/10 text-brand"><Calendar className="w-6 h-6" /></div>
+            <h3 className="font-display text-xl font-extrabold text-ink">Book a home visit</h3>
+            <p className="text-sm text-slatey mt-1.5 leading-relaxed">Brad comes out, inspects your roof in person, and gives you an <b className="text-ink">exact quote</b> — free.</p>
+            <button onClick={() => setVisit(true)} className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-brand hover:bg-brand-dark text-white font-bold px-5 py-3 rounded-lg transition-colors">Schedule my visit <ArrowRight className="w-4 h-4" /></button>
+          </div>
+          <div className="rounded-3xl bg-white border border-black/5 shadow-card hover:shadow-lift hover:-translate-y-1 transition-all p-7">
+            <div className="w-12 h-12 rounded-xl grid place-items-center mb-4 bg-brand/10 text-brand"><Calculator className="w-6 h-6" /></div>
+            <h3 className="font-display text-xl font-extrabold text-ink">Get a quick estimate</h3>
+            <p className="text-sm text-slatey mt-1.5 leading-relaxed">Leave your info or use our instant estimator — we'll follow up with a ballpark, usually same day.</p>
+            <Link to="/estimate" className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-ink hover:bg-charcoal text-white font-bold px-5 py-3 rounded-lg transition-colors">Get my estimate <ArrowRight className="w-4 h-4" /></Link>
+          </div>
+          <div className="rounded-3xl bg-ink text-white shadow-lift p-7 relative overflow-hidden">
+            <div className="absolute -top-12 -right-8 w-40 h-40 rounded-full bg-brand/20 blur-2xl" />
+            <div className="relative">
+              <div className="w-12 h-12 rounded-xl grid place-items-center mb-4 bg-white/10 text-brand-soft"><Phone className="w-6 h-6" /></div>
+              <h3 className="font-display text-xl font-extrabold">Call us now</h3>
+              <p className="text-sm text-white/70 mt-1.5 leading-relaxed">Want it handled ASAP? Skip the forms and talk to us directly — a real person picks up.</p>
+              <a href={PHONE_HREF} className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-brand hover:bg-brand-dark text-white font-bold px-5 py-3 rounded-lg transition-colors"><Phone className="w-4 h-4" /> {PHONE}</a>
+            </div>
+          </div>
+        </div>
+        {visit && (
+          <div className="mt-6 max-w-2xl mx-auto bg-white rounded-3xl border border-black/5 shadow-lift p-7 md:p-9">
+            {done ? (
+              <div className="text-center py-4">
+                <CheckCircle2 className="w-12 h-12 text-brand mx-auto mb-3" />
+                <div className="font-display text-2xl font-extrabold text-ink">Visit requested{name ? `, ${name.split(" ")[0]}` : ""}!</div>
+                <p className="text-slatey mt-1">Brad will reach out to lock in a time that works for you.</p>
+              </div>
+            ) : (
+              <>
+                <h3 className="font-display text-2xl font-extrabold text-ink">Schedule your free in-home inspection</h3>
+                <p className="text-slatey text-sm mt-1">Tell us where and when — Brad will confirm.</p>
+                <form onSubmit={submit} className="mt-5 space-y-3">
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <input value={name} onChange={(e) => setName(e.target.value)} required placeholder="Your name" className={field} />
+                    <input value={phone} onChange={(e) => setPhone(e.target.value)} required type="tel" placeholder="Phone" className={field} />
+                  </div>
+                  <AddressAutocomplete value={address} onChange={setAddress} onSelect={setAddress} />
+                  <select value={when} onChange={(e) => setWhen(e.target.value)} className={field}>
+                    <option value="">Preferred time (optional)</option>
+                    <option>As soon as possible</option>
+                    <option>Weekday morning</option>
+                    <option>Weekday afternoon</option>
+                    <option>Weekday evening</option>
+                    <option>Weekend</option>
+                  </select>
+                  <button type="submit" className="w-full inline-flex items-center justify-center gap-2 bg-brand hover:bg-brand-dark text-white font-bold px-6 py-3.5 rounded-lg transition-colors">Request my visit <ArrowRight className="w-4 h-4" /></button>
+                </form>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </section>
   );
@@ -859,7 +939,7 @@ function usePageMeta(title: string, desc?: string) {
 
 function HomePage() {
   usePageMeta("A&B Home Improvement — Roofing Done Right | Shelby Township, MI", "Metro Detroit's top-rated roofer. New roofs, repairs, gutters & siding. 4.8★ (50 reviews), licensed & insured, financing available. Free instant estimate from your address.");
-  return (<><Hero /><TrustBar /><Services /><MeetTheTeam /><Reviews /><AreasServed /><CtaBand /><Contact /></>);
+  return (<><Hero /><TrustBar /><Services /><MeetTheTeam /><Reviews /><AreasServed /><GetStarted /><Contact /></>);
 }
 function ServicesPage() {
   usePageMeta("Roofing, Gutters & Home Services | A&B Home Improvement — Shelby Twp, MI", "Roofing, gutters, painting & more from Metro Detroit's top-rated local crew. Licensed & insured. Flexible financing available. Get a free quote today.");
