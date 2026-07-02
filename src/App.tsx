@@ -179,7 +179,16 @@ function Hero() {
             Metro Detroit's top-rated roofing crew. New roofs, repairs, and full exteriors — quality work,
             honest pricing, and a free estimate measured right from your address.
           </p>
-          <div className="mt-8 flex flex-col sm:flex-row gap-3">
+
+          {/* Financing highlight — the big differentiator */}
+          <div className="mt-6 inline-flex flex-wrap items-center gap-x-4 gap-y-1.5 bg-brand/15 border border-brand-soft/40 rounded-2xl px-5 py-3.5 backdrop-blur">
+            <span className="inline-flex items-center gap-2 font-extrabold text-white text-lg">
+              <Wallet className="w-5 h-5 text-brand-soft" /> $0 Down Financing
+            </span>
+            <span className="text-white/70 text-sm">Get your roof now, pay monthly — as low as <b className="text-brand-soft">~$150/mo</b>. Approval in minutes.</span>
+          </div>
+
+          <div className="mt-7 flex flex-col sm:flex-row gap-3">
             <Link to="/estimate" className="inline-flex items-center justify-center gap-2 bg-brand hover:bg-brand-dark text-white font-bold px-7 py-4 rounded-xl shadow-brand transition-all hover:scale-[1.02]">
               <Calculator className="w-5 h-5" /> Get My Instant Estimate
             </Link>
@@ -1015,7 +1024,7 @@ function AdminLogin({ value, onChange, onSubmit, err, loading }: { value: string
             {err && <p className="text-[13px] text-red-600 text-center">{err}</p>}
           </form>
         </div>
-        <Link to="/" className="mt-5 flex items-center justify-center gap-1.5 text-sm text-slatey hover:text-ink"><ArrowLeft className="w-4 h-4" /> Back to site</Link>
+        <a href="https://www.abroofingmi.com" className="mt-5 flex items-center justify-center gap-1.5 text-sm text-slatey hover:text-ink"><ArrowLeft className="w-4 h-4" /> Back to site</a>
       </div>
     </div>
   );
@@ -1071,9 +1080,9 @@ function AdminPage() {
             <span className="font-display font-extrabold text-lg hidden sm:block">Owner <span className="text-brand-soft">Dashboard</span></span>
           </div>
           <div className="flex items-center gap-4">
-            <Link to="/" className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-white/70 hover:text-white">
+            <a href="https://www.abroofingmi.com" className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-white/70 hover:text-white">
               <ArrowLeft className="w-4 h-4" /> Back to site
-            </Link>
+            </a>
             <button onClick={logout} className="text-sm font-semibold text-white/70 hover:text-white">Log out</button>
             <div className="flex items-center gap-2.5 pl-4 border-l border-white/15">
               <span className="grid place-items-center w-9 h-9 rounded-full bg-brand text-white font-bold text-sm">B</span>
@@ -1226,7 +1235,20 @@ function AdminPage() {
 }
 
 /* ---------------- App ---------------- */
+// The admin.abroofingmi.com subdomain serves the private dashboard at its root.
+const IS_ADMIN_HOST = typeof window !== "undefined" && window.location.hostname.startsWith("admin.");
+
 export default function App() {
+  if (IS_ADMIN_HOST) {
+    return (
+      <BrowserRouter>
+        <ScrollToTop />
+        <Routes>
+          <Route path="*" element={<AdminPage />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
   return (
     <BrowserRouter>
       <ScrollToTop />
