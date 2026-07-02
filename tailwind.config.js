@@ -13,6 +13,8 @@ export default {
           soft: "#FF8534",
         },
         cloud: "#F5F6F8",
+        cream: "#FAF6EF",
+        creamdeep: "#F3EDE2",
       },
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', "system-ui", "sans-serif"],

@@ -29,6 +29,29 @@ function underLookupLimit() {
   } catch { return true; }
 }
 
+// Lead capture: emails Brad via Formspree + saves to the admin database.
+const FORMSPREE_ENDPOINT = "https://formspree.io/f/mkolqdag";
+type Lead = { name?: string; phone?: string; email?: string; address?: string; service?: string; message?: string; estimate?: string };
+async function submitLead(lead: Lead) {
+  // Fire both; don't let one failing block the other.
+  const tasks: Promise<any>[] = [];
+  tasks.push(
+    fetch(FORMSPREE_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(lead),
+    }).catch(() => {})
+  );
+  tasks.push(
+    fetch("/api/save-lead", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(lead),
+    }).catch(() => {})
+  );
+  await Promise.allSettled(tasks);
+}
+
 /* ---------------- Payments ---------------- */
 async function startCheckout(payload: { mode: string; amount?: number; description?: string; email?: string }): Promise<{ url?: string; error?: string }> {
   try {
@@ -377,7 +400,7 @@ function Estimator() {
                   </div>
                 </div>
               ) : (
-                <form onSubmit={(e) => { e.preventDefault(); setDone(true); }} className="mt-4 flex flex-col gap-2.5">
+                <form onSubmit={(e) => { e.preventDefault(); submitLead({ name, phone, address, service: `${m.label} · ~${size.toLocaleString()} sq ft`, estimate: `${fmt(low)}–${fmt(high)}` }); setDone(true); }} className="mt-4 flex flex-col gap-2.5">
                   <p className="text-sm text-white/70">Want your exact quote? Drop your info:</p>
                   <input value={name} onChange={(e) => setName(e.target.value)} required placeholder="Your name" className="rounded-lg bg-white/10 border border-white/15 px-4 py-3 text-sm placeholder:text-white/40 focus:outline-none focus:border-brand" />
                   <input value={phone} onChange={(e) => setPhone(e.target.value)} required type="tel" placeholder="Phone number" className="rounded-lg bg-white/10 border border-white/15 px-4 py-3 text-sm placeholder:text-white/40 focus:outline-none focus:border-brand" />
@@ -446,7 +469,7 @@ function Gallery() {
     { src: "/photos/chimney.png", t: "Exterior & Masonry" },
   ];
   return (
-    <section id="gallery" className="section bg-cloud scroll-mt-20">
+    <section id="gallery" className="section bg-cream scroll-mt-20">
       <div className="container-x">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <p className="text-brand font-bold uppercase tracking-[0.2em] text-xs mb-3">Our Work</p>
@@ -524,6 +547,43 @@ function Reviews() {
   );
 }
 
+/* ---------------- Meet the team ---------------- */
+function MeetTheTeam() {
+  return (
+    <section className="section bg-cream">
+      <div className="container-x grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+        <div className="relative">
+          <img src="/photos/crew-shingles.png" alt="Brad and the A&B Home Improvement crew on a roof" className="rounded-3xl shadow-lift w-full object-cover aspect-[4/5] max-h-[560px]" />
+          <div className="absolute -bottom-5 right-4 sm:right-8 bg-white rounded-2xl shadow-card px-5 py-4 flex items-center gap-3 border border-black/5">
+            <span className="grid place-items-center w-11 h-11 rounded-full bg-brand text-white font-display font-extrabold">B</span>
+            <div>
+              <div className="font-display font-extrabold text-ink leading-tight">Brad</div>
+              <div className="text-[12px] text-slatey">Owner · on every job</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <p className="text-brand font-bold uppercase tracking-[0.2em] text-xs mb-3">Meet the team</p>
+          <h2 className="text-4xl md:text-5xl text-ink">Real people. Real work. Right here in Shelby Township.</h2>
+          <div className="mt-6 space-y-4 text-slatey text-lg leading-relaxed">
+            <p>A&amp;B started the honest way — showing up on time, doing the job right, and treating every home like it's our own. No pushy sales, no crews that vanish halfway through.</p>
+            <p>When you call, you get Brad and a crew that's been doing this for years. We'll walk your roof with you, tell you straight what it needs, and give you a fair price.</p>
+          </div>
+          <div className="mt-7 flex flex-wrap gap-x-6 gap-y-3 text-sm font-semibold text-ink">
+            <span className="inline-flex items-center gap-2"><ThumbsUp className="w-4 h-4 text-brand" /> Family owned</span>
+            <span className="inline-flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-brand" /> Licensed &amp; insured</span>
+            <span className="inline-flex items-center gap-2"><Star className="w-4 h-4 text-brand" /> 50 five-star reviews</span>
+          </div>
+          <div className="mt-8 flex flex-col sm:flex-row gap-3">
+            <a href={PHONE_HREF} className="inline-flex items-center justify-center gap-2 bg-ink hover:bg-charcoal text-white font-bold px-7 py-4 rounded-xl transition-colors"><Phone className="w-5 h-5" /> Talk to Brad</a>
+            <Link to="/estimate" className="inline-flex items-center justify-center gap-2 border-2 border-black/15 hover:border-brand text-ink font-bold px-7 py-4 rounded-xl transition-colors">Get your estimate</Link>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ---------------- Financing ---------------- */
 function Financing() {
   return (
@@ -589,11 +649,25 @@ function ContactForm() {
   }
   const field = "w-full rounded-lg bg-cloud border border-black/10 px-4 py-3 text-sm text-ink placeholder:text-slatey/50 focus:outline-none focus:border-brand focus:bg-white transition";
   return (
-    <form onSubmit={(e) => { e.preventDefault(); setDone(true); }} className="mt-6 space-y-3">
-      <input required placeholder="Name" className={field} />
-      <input required type="tel" placeholder="Phone" className={field} />
-      <input placeholder="Property address" className={field} />
-      <textarea rows={3} placeholder="What do you need? (e.g. new roof, leak repair, gutters)" className={field} />
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        submitLead({
+          name: (fd.get("name") as string) || "",
+          phone: (fd.get("phone") as string) || "",
+          address: (fd.get("address") as string) || "",
+          message: (fd.get("message") as string) || "",
+          service: "Contact form",
+        });
+        setDone(true);
+      }}
+      className="mt-6 space-y-3"
+    >
+      <input name="name" required placeholder="Name" className={field} />
+      <input name="phone" required type="tel" placeholder="Phone" className={field} />
+      <input name="address" placeholder="Property address" className={field} />
+      <textarea name="message" rows={3} placeholder="What do you need? (e.g. new roof, leak repair, gutters)" className={field} />
       <button type="submit" className="w-full inline-flex items-center justify-center gap-2 bg-brand hover:bg-brand-dark text-white font-bold px-6 py-3.5 rounded-lg transition-colors">
         Get My Free Estimate <ArrowRight className="w-4 h-4" />
       </button>
@@ -722,7 +796,7 @@ function usePageMeta(title: string, desc?: string) {
 
 function HomePage() {
   usePageMeta("A&B Home Improvement — Roofing Done Right | Shelby Township, MI", "Metro Detroit's top-rated roofer. New roofs, repairs, gutters & siding. 4.8★ (50 reviews), licensed & insured, financing available. Free instant estimate from your address.");
-  return (<><Hero /><TrustBar /><Services /><Reviews /><CtaBand /><Contact /></>);
+  return (<><Hero /><TrustBar /><Services /><MeetTheTeam /><Reviews /><CtaBand /><Contact /></>);
 }
 function ServicesPage() {
   usePageMeta("Roofing, Gutters & Siding Services | A&B Home Improvement — Shelby Twp, MI", "Roofing, gutters, siding, painting & more from Metro Detroit's top-rated local crew. Licensed & insured. Get a free quote today.");
@@ -866,11 +940,60 @@ function InvoiceGenerator() {
   );
 }
 
+type RealLead = { id?: string | number; name?: string; phone?: string; email?: string; address?: string; service?: string; message?: string; estimate?: string; created_at?: string };
+
+function AdminLogin({ value, onChange, onSubmit, err, loading }: { value: string; onChange: (v: string) => void; onSubmit: () => void; err: string; loading: boolean }) {
+  return (
+    <div className="min-h-screen bg-ink text-white grid place-items-center px-5">
+      <div className="w-full max-w-sm">
+        <div className="flex flex-col items-center text-center">
+          <Logo h="h-14" chip />
+          <h1 className="font-display text-2xl font-extrabold mt-5">Owner <span className="text-brand-soft">Dashboard</span></h1>
+          <p className="text-white/60 text-sm mt-1">Enter your password to continue.</p>
+        </div>
+        <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} className="mt-6 space-y-3">
+          <input autoFocus type="password" value={value} onChange={(e) => onChange(e.target.value)} placeholder="Password" className="w-full rounded-lg bg-white/10 border border-white/15 px-4 py-3.5 text-sm placeholder:text-white/40 focus:outline-none focus:border-brand" />
+          <button type="submit" disabled={loading} className="w-full inline-flex items-center justify-center gap-2 bg-brand hover:bg-brand-dark font-bold px-6 py-3.5 rounded-lg transition-colors disabled:opacity-60">
+            {loading ? "Checking…" : "Log in"} <ArrowRight className="w-4 h-4" />
+          </button>
+          {err && <p className="text-[13px] text-red-300 text-center">{err}</p>}
+        </form>
+        <Link to="/" className="mt-6 flex items-center justify-center gap-1.5 text-sm text-white/50 hover:text-white"><ArrowLeft className="w-4 h-4" /> Back to site</Link>
+      </div>
+    </div>
+  );
+}
+
 function AdminPage() {
   const money = (n: number) => "$" + n.toLocaleString();
   const pipeline = LEADS.reduce((s, l) => s + l.est, 0);
   const totalMargin = LEADS.reduce((s, l) => s + (l.est - l.cost), 0);
   const avgMargin = Math.round((totalMargin / pipeline) * 100);
+
+  const [pw, setPw] = useState("");
+  const [authed, setAuthed] = useState(false);
+  const [err, setErr] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [realLeads, setRealLeads] = useState<RealLead[]>([]);
+  const [configured, setConfigured] = useState(false);
+
+  const verify = async (k: string, silent = false) => {
+    setLoading(true); if (!silent) setErr("");
+    try {
+      const r = await fetch("/api/leads", { headers: { "x-admin-key": k } });
+      if (r.status === 401) { setErr("Wrong password."); sessionStorage.removeItem("ab_admin_key"); setLoading(false); return; }
+      if (r.status === 503) { setErr("Admin isn't set up yet — add ADMIN_PASSWORD in Vercel."); setLoading(false); return; }
+      const d = await r.json();
+      sessionStorage.setItem("ab_admin_key", k);
+      setRealLeads(Array.isArray(d.leads) ? d.leads : []);
+      setConfigured(!!d.configured);
+      setAuthed(true);
+    } catch { setErr("Couldn't connect — try again."); }
+    setLoading(false);
+  };
+  useEffect(() => { const s = sessionStorage.getItem("ab_admin_key"); if (s) verify(s, true); }, []);
+  const logout = () => { sessionStorage.removeItem("ab_admin_key"); setAuthed(false); setPw(""); };
+  const fmtDate = (iso?: string) => iso ? new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "";
 
   const kpis = [
     { icon: Users, label: "Active Leads", value: String(LEADS.length), sub: "3 new this week", tone: "text-brand" },
@@ -878,6 +1001,8 @@ function AdminPage() {
     { icon: TrendingUp, label: "Total Margin", value: money(totalMargin), sub: "estimated profit", tone: "text-brand" },
     { icon: Percent, label: "Avg Margin", value: avgMargin + "%", sub: "healthy & on target", tone: "text-green-600" },
   ];
+
+  if (!authed) return <AdminLogin value={pw} onChange={setPw} onSubmit={() => verify(pw)} err={err} loading={loading} />;
 
   return (
     <div className="min-h-screen bg-cloud">
@@ -892,6 +1017,7 @@ function AdminPage() {
             <Link to="/" className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-white/70 hover:text-white">
               <ArrowLeft className="w-4 h-4" /> Back to site
             </Link>
+            <button onClick={logout} className="text-sm font-semibold text-white/70 hover:text-white">Log out</button>
             <div className="flex items-center gap-2.5 pl-4 border-l border-white/15">
               <span className="grid place-items-center w-9 h-9 rounded-full bg-brand text-white font-bold text-sm">B</span>
               <div className="leading-tight">
@@ -907,7 +1033,57 @@ function AdminPage() {
         <div className="flex items-center gap-2 mb-1 text-brand"><LayoutDashboard className="w-5 h-5" /><span className="font-bold uppercase tracking-wider text-xs">Dashboard</span></div>
         <h1 className="font-display text-3xl font-extrabold text-ink">Welcome back, Brad</h1>
         <p className="text-slatey mt-1">Here's how your jobs and leads are looking.</p>
-        <p className="mt-2 inline-block text-[11px] font-semibold bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full">Demo data — sample leads for preview</p>
+
+        {/* Real website leads */}
+        <div className="bg-white rounded-2xl border border-black/5 shadow-card mt-6 overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-5 border-b border-black/5">
+            <div>
+              <h2 className="font-display text-xl font-extrabold text-ink">New Website Leads</h2>
+              <p className="text-sm text-slatey">Live — every estimator + contact submission lands here.</p>
+            </div>
+            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-green-600"><span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" /> Live</span>
+          </div>
+          {realLeads.length === 0 ? (
+            <div className="px-6 py-10 text-center">
+              <Users className="w-8 h-8 text-slatey/40 mx-auto mb-2" />
+              <p className="text-slatey font-semibold">No leads yet</p>
+              <p className="text-sm text-slatey/70 mt-1">{configured ? "They'll appear here the moment someone submits the estimator or contact form." : "Connect the database (Supabase) to start saving leads — until then, leads still email Brad via Formspree."}</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-[11px] uppercase tracking-wider text-slatey/70 bg-cloud">
+                    <th className="px-6 py-3 font-bold">Customer</th>
+                    <th className="px-4 py-3 font-bold">Contact</th>
+                    <th className="px-4 py-3 font-bold">Service / Interest</th>
+                    <th className="px-4 py-3 font-bold">Estimate</th>
+                    <th className="px-4 py-3 font-bold">When</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-black/5">
+                  {realLeads.map((l, i) => (
+                    <tr key={l.id ?? i} className="hover:bg-cloud/60 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="font-bold text-ink">{l.name || "—"}</div>
+                        {l.address && <div className="text-[12px] text-slatey flex items-center gap-1 mt-0.5"><MapPin className="w-3 h-3" /> {l.address}</div>}
+                      </td>
+                      <td className="px-4 py-4 text-slatey">
+                        {l.phone && <div className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-brand" /> {l.phone}</div>}
+                        {l.email && <div className="text-[12px] text-slatey/70 mt-0.5">{l.email}</div>}
+                      </td>
+                      <td className="px-4 py-4 text-slatey">{l.service || "—"}{l.message && <div className="text-[12px] text-slatey/60 mt-0.5 max-w-xs truncate">{l.message}</div>}</td>
+                      <td className="px-4 py-4 font-bold text-ink">{l.estimate || "—"}</td>
+                      <td className="px-4 py-4 text-slatey/70 text-[13px]">{fmtDate(l.created_at)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        <p className="mt-8 mb-4 inline-block text-[11px] font-semibold bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full">Below: sample pipeline showing cost / margin tracking</p>
 
         {/* KPI cards */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
