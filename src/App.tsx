@@ -666,24 +666,24 @@ function Financing() {
             <Wallet className="w-10 h-10 text-brand-soft" />
             <span className="inline-flex items-center gap-1.5 bg-brand-soft/15 text-brand-soft text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full">$0 Down Available</span>
           </div>
-          <div className="mt-4 font-display text-2xl font-extrabold">Pick a plan that fits your budget</div>
-          <p className="text-white/60 mt-2 text-sm">Spread the cost over time. The longer the term, the lower your monthly payment. Get your exact number with the instant estimator.</p>
+          <div className="mt-4 font-display text-2xl font-extrabold">Example payments</div>
+          <p className="text-white/60 mt-2 text-sm">On a <b className="text-white">$10,000</b> roof — the longer the term, the lower the monthly.</p>
           <div className="mt-6 space-y-3">
             {[
-              ["12 months", "Pay it off fast", "Highest monthly"],
-              ["24 months", "Balanced & popular", "Lower monthly"],
-              ["Up to 60 months", "Lowest monthly payment", "Most affordable"],
+              ["12 months", "Pay it off fast", "≈ $900/mo"],
+              ["24 months", "Balanced & popular", "≈ $485/mo"],
+              ["60 months", "Lowest monthly payment", "≈ $237/mo"],
             ].map(([term, tag, note]) => (
               <div key={term} className="flex items-center justify-between bg-white/5 rounded-xl px-4 py-3.5 border border-white/10">
                 <div>
                   <div className="font-display font-extrabold text-brand-soft">{term}</div>
                   <div className="text-[11px] text-white/55 mt-0.5">{tag}</div>
                 </div>
-                <div className="text-[11px] text-white/45 text-right">{note}</div>
+                <div className="font-display font-extrabold text-white text-right">{note}</div>
               </div>
             ))}
           </div>
-          <p className="text-[11px] text-white/45 mt-4 leading-relaxed">Financing offered through our lending partners, subject to credit approval. $0-down and multiple term options available — we'll match you to the right plan.</p>
+          <p className="text-[11px] text-white/45 mt-4 leading-relaxed">Example only, based on ~14.99% APR on a $10,000 project. Your actual rate (0–36% APR), term, and monthly payment depend on the amount financed and credit approval through Affirm or Klarna. $0-down options available.</p>
         </div>
       </div>
     </section>
