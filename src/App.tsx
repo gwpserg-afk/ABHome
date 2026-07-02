@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type FormEvent } from "react";
 import { BrowserRouter, Routes, Route, Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import {
   Phone, Star, ShieldCheck, BadgeCheck, Wallet, MapPin, Clock, ArrowRight,
@@ -27,6 +27,42 @@ function underLookupLimit() {
     sessionStorage.setItem("ab_geo_calls", String(n + 1));
     return true;
   } catch { return true; }
+}
+
+/* ---------------- Payments ---------------- */
+async function startCheckout(payload: { mode: string; amount?: number; description?: string; email?: string }): Promise<{ url?: string; error?: string }> {
+  try {
+    const r = await fetch("/api/create-checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const d = await r.json();
+    if (!r.ok) return { error: d.error || "Payment error." };
+    return { url: d.url };
+  } catch {
+    return { error: "Network error — please try again." };
+  }
+}
+
+function DepositButton({ email, className = "" }: { email?: string; className?: string }) {
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+  const go = async () => {
+    setLoading(true); setErr("");
+    const { url, error } = await startCheckout({ mode: "deposit", email });
+    if (url) window.location.href = url;
+    else { setErr(error || "Payments unavailable right now."); setLoading(false); }
+  };
+  return (
+    <div className={className}>
+      <button onClick={go} disabled={loading} className="w-full inline-flex items-center justify-center gap-2 bg-brand hover:bg-brand-dark text-white font-bold px-6 py-3.5 rounded-lg transition-colors disabled:opacity-60">
+        <CreditCard className="w-4 h-4" /> {loading ? "Starting secure checkout…" : "Lock in my spot — $500 deposit"}
+      </button>
+      <p className="text-[11px] text-white/50 mt-2 text-center">Secure checkout by Stripe · card, or pay monthly with Affirm / Klarna</p>
+      {err && <p className="text-[12px] text-red-300 mt-1.5 text-center">{err}</p>}
+    </div>
+  );
 }
 
 /* ---------------- Logo ---------------- */
@@ -329,10 +365,16 @@ function Estimator() {
               </div>
 
               {done ? (
-                <div className="mt-4 rounded-xl bg-brand/15 border border-brand/30 p-5 text-center">
-                  <CheckCircle2 className="w-9 h-9 text-brand-soft mx-auto mb-2" />
-                  <div className="font-bold text-lg">You're all set{name ? `, ${name.split(" ")[0]}` : ""}!</div>
-                  <p className="text-sm text-white/70 mt-1">We'll confirm your exact roof measurement and call with your final quote.</p>
+                <div className="mt-4 rounded-xl bg-brand/15 border border-brand/30 p-5">
+                  <div className="text-center">
+                    <CheckCircle2 className="w-9 h-9 text-brand-soft mx-auto mb-2" />
+                    <div className="font-bold text-lg">You're all set{name ? `, ${name.split(" ")[0]}` : ""}!</div>
+                    <p className="text-sm text-white/70 mt-1">We'll confirm your exact roof measurement and call with your final quote.</p>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-white/10">
+                    <p className="text-sm text-white/80 text-center mb-3">Want to lock in your spot on the schedule?</p>
+                    <DepositButton />
+                  </div>
                 </div>
               ) : (
                 <form onSubmit={(e) => { e.preventDefault(); setDone(true); }} className="mt-4 flex flex-col gap-2.5">
@@ -706,6 +748,34 @@ function ContactPage() {
   usePageMeta("Contact — Free Estimates 7 Days a Week | A&B Home Improvement", "Call, text, or message A&B Home Improvement in Shelby Township, MI. Free estimates, usually same-day response.");
   return (<><PageHead label="Get In Touch" title="Let's talk about your roof." sub="Call, text, or send us a note — we usually reply the same day." /><Contact /></>);
 }
+function PaySuccessPage() {
+  usePageMeta("Payment received — A&B Home Improvement");
+  return (
+    <section className="section min-h-[60vh] grid items-center">
+      <div className="container-x max-w-xl mx-auto text-center">
+        <CheckCircle2 className="w-16 h-16 text-brand mx-auto mb-4" />
+        <h1 className="font-display text-4xl font-extrabold text-ink">Thank you — payment received!</h1>
+        <p className="mt-4 text-slatey text-lg">We've got it. Brad's team will reach out to confirm the details and get you on the schedule. A receipt is on its way to your email.</p>
+        <Link to="/" className="mt-8 inline-flex items-center gap-2 bg-brand hover:bg-brand-dark text-white font-bold px-7 py-4 rounded-xl shadow-brand transition-colors">Back to home <ArrowRight className="w-5 h-5" /></Link>
+      </div>
+    </section>
+  );
+}
+function PayCancelPage() {
+  usePageMeta("Payment canceled — A&B Home Improvement");
+  return (
+    <section className="section min-h-[60vh] grid items-center">
+      <div className="container-x max-w-xl mx-auto text-center">
+        <h1 className="font-display text-4xl font-extrabold text-ink">Payment canceled</h1>
+        <p className="mt-4 text-slatey text-lg">No worries — nothing was charged. If you have any questions, give us a call and we'll help you out.</p>
+        <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+          <Link to="/estimate" className="inline-flex items-center justify-center gap-2 bg-brand hover:bg-brand-dark text-white font-bold px-7 py-4 rounded-xl shadow-brand transition-colors">Back to estimate</Link>
+          <a href={PHONE_HREF} className="inline-flex items-center justify-center gap-2 border-2 border-black/15 hover:border-brand text-ink font-bold px-7 py-4 rounded-xl transition-colors"><Phone className="w-5 h-5" /> {PHONE}</a>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 /* ---------------- Site layout ---------------- */
 function SiteLayout() {
@@ -733,6 +803,68 @@ const statusStyle: Record<string, string> = {
   "In Progress": "bg-brand/15 text-brand-dark",
   "New Lead": "bg-blue-100 text-blue-700",
 };
+
+function InvoiceGenerator() {
+  const [amount, setAmount] = useState("");
+  const [desc, setDesc] = useState("");
+  const [email, setEmail] = useState("");
+  const [link, setLink] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  const gen = async (e: FormEvent) => {
+    e.preventDefault();
+    setLoading(true); setErr(""); setLink(""); setCopied(false);
+    const { url, error } = await startCheckout({ mode: "invoice", amount: Number(amount), description: desc, email });
+    if (url) setLink(url); else setErr(error || "Could not create link.");
+    setLoading(false);
+  };
+  const copy = () => {
+    navigator.clipboard?.writeText(link);
+    setCopied(true); setTimeout(() => setCopied(false), 2000);
+  };
+  const field = "w-full rounded-lg bg-cloud border border-black/10 px-4 py-3 text-sm text-ink placeholder:text-slatey/50 focus:outline-none focus:border-brand focus:bg-white transition";
+
+  return (
+    <div className="bg-white rounded-2xl border border-black/5 shadow-card p-6">
+      <div className="flex items-center gap-2 text-brand"><CreditCard className="w-5 h-5" /><h2 className="font-display text-xl font-extrabold text-ink">Create a payment link</h2></div>
+      <p className="text-sm text-slatey mt-1">Enter the price you quoted → get a link to text or email the client. They pay by card, or monthly with Affirm / Klarna. Link never expires.</p>
+      <form onSubmit={gen} className="mt-4 grid sm:grid-cols-2 gap-3">
+        <div>
+          <label className="block text-[11px] font-bold uppercase tracking-wider text-slatey mb-1.5">Amount (USD)</label>
+          <input required type="number" min={1} max={100000} value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="9000" className={field} />
+        </div>
+        <div>
+          <label className="block text-[11px] font-bold uppercase tracking-wider text-slatey mb-1.5">Client email (optional)</label>
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="customer@email.com" className={field} />
+        </div>
+        <div className="sm:col-span-2">
+          <label className="block text-[11px] font-bold uppercase tracking-wider text-slatey mb-1.5">Description</label>
+          <input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Full roof replacement — 123 Main St, Shelby Twp" className={field} />
+        </div>
+        <div className="sm:col-span-2">
+          <button type="submit" disabled={loading} className="inline-flex items-center justify-center gap-2 bg-brand hover:bg-brand-dark text-white font-bold px-6 py-3 rounded-lg transition-colors disabled:opacity-60">
+            {loading ? "Creating link…" : "Generate payment link"} <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      </form>
+      {err && <p className="text-sm text-red-600 mt-3">{err}</p>}
+      {link && (
+        <div className="mt-4 rounded-xl bg-cloud border border-black/10 p-4">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-slatey mb-1.5">Payment link — send this to the client</div>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input readOnly value={link} className="flex-1 rounded-lg border border-black/10 bg-white px-3 py-2.5 text-sm text-ink" onFocus={(e) => e.target.select()} />
+            <button onClick={copy} className="inline-flex items-center justify-center gap-1.5 bg-ink hover:bg-charcoal text-white font-bold px-4 py-2.5 rounded-lg text-sm transition-colors">
+              {copied ? <><CheckCircle2 className="w-4 h-4" /> Copied</> : "Copy"}
+            </button>
+            <a href={link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-1.5 border border-black/10 hover:border-brand text-ink font-bold px-4 py-2.5 rounded-lg text-sm transition-colors">Open</a>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function AdminPage() {
   const money = (n: number) => "$" + n.toLocaleString();
@@ -789,6 +921,11 @@ function AdminPage() {
               <div className="text-[12px] text-slatey/70 mt-0.5">{k.sub}</div>
             </div>
           ))}
+        </div>
+
+        {/* Invoice / payment-link generator */}
+        <div className="mt-8">
+          <InvoiceGenerator />
         </div>
 
         {/* Leads table */}
@@ -869,6 +1006,8 @@ export default function App() {
           <Route path="/reviews" element={<ReviewsPage />} />
           <Route path="/financing" element={<FinancingPage />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/pay/success" element={<PaySuccessPage />} />
+          <Route path="/pay/cancel" element={<PayCancelPage />} />
         </Route>
         <Route path="/admin" element={<AdminPage />} />
         <Route path="*" element={<HomePage />} />
