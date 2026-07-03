@@ -5,7 +5,7 @@ import {
   Menu, X, Home, Hammer, Droplets, PaintRoller, Wrench,
   CheckCircle2, Calculator, Sparkles, Award, ThumbsUp,
   LayoutDashboard, DollarSign, TrendingUp, Users, CreditCard, ArrowLeft, Percent,
-  Lock, Eye, EyeOff, Calendar,
+  Lock, Eye, EyeOff, Calendar, MessageCircle, Send,
 } from "lucide-react";
 
 const PHONE = "(810) 627-4895";
@@ -67,26 +67,6 @@ async function startCheckout(payload: { mode: string; amount?: number; descripti
   } catch {
     return { error: "Network error — please try again." };
   }
-}
-
-function DepositButton({ email, className = "" }: { email?: string; className?: string }) {
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
-  const go = async () => {
-    setLoading(true); setErr("");
-    const { url, error } = await startCheckout({ mode: "deposit", email });
-    if (url) window.location.href = url;
-    else { setErr(error || "Payments unavailable right now."); setLoading(false); }
-  };
-  return (
-    <div className={className}>
-      <button onClick={go} disabled={loading} className="w-full inline-flex items-center justify-center gap-2 bg-brand hover:bg-brand-dark text-white font-bold px-6 py-3.5 rounded-lg transition-colors disabled:opacity-60">
-        <CreditCard className="w-4 h-4" /> {loading ? "Starting secure checkout…" : "Lock in my spot — $500 deposit"}
-      </button>
-      <p className="text-[11px] text-white/50 mt-2 text-center">Secure checkout by Stripe · card, or pay monthly with Affirm / Klarna</p>
-      {err && <p className="text-[12px] text-red-300 mt-1.5 text-center">{err}</p>}
-    </div>
-  );
 }
 
 /* ---------------- Logo ---------------- */
@@ -397,11 +377,7 @@ function Estimator() {
                   <div className="text-center">
                     <CheckCircle2 className="w-9 h-9 text-brand-soft mx-auto mb-2" />
                     <div className="font-bold text-lg">You're all set{name ? `, ${name.split(" ")[0]}` : ""}!</div>
-                    <p className="text-sm text-white/70 mt-1">We'll confirm your exact roof measurement and call with your final quote.</p>
-                  </div>
-                  <div className="mt-4 pt-4 border-t border-white/10">
-                    <p className="text-sm text-white/80 text-center mb-3">Want to lock in your spot on the schedule?</p>
-                    <DepositButton />
+                    <p className="text-sm text-white/70 mt-1">We'll confirm your exact roof measurement and call with your final quote — usually within one business day.</p>
                   </div>
                 </div>
               ) : (
@@ -994,8 +970,130 @@ function PayCancelPage() {
 }
 
 /* ---------------- Site layout ---------------- */
+/* ---------------- Chat widget (no API key — scripted FAQ + lead capture) ---------------- */
+type ChatMsg = { from: "bot" | "me"; text: string };
+const CHAT_FAQ: { q: string; a: string }[] = [
+  { q: "💰 Do you offer financing?", a: "Yes — $0-down monthly financing through Affirm or Klarna, with quick approval. You can spread the cost over time instead of paying all at once." },
+  { q: "🆓 Is the inspection free?", a: "100% free. We inspect your roof and give you an honest quote with no obligation — you're never pressured." },
+  { q: "💵 How much is a new roof?", a: "It depends on your roof's size and shingle choice. Use the instant estimator on our Estimate page for a ballpark, and we confirm the exact price after a free inspection." },
+  { q: "📍 What areas do you serve?", a: "Shelby Township and the surrounding Metro Detroit communities across Michigan." },
+  { q: "🛠️ What do you do?", a: "Shingle & flat roof replacement and repair — plus gutters, siding, and painting. (We don't do metal/steel roofs.)" },
+];
+
+function RoofChat() {
+  const [open, setOpen] = useState(false);
+  const [view, setView] = useState<"chat" | "quote" | "sent">("chat");
+  const [msgs, setMsgs] = useState<ChatMsg[]>([
+    { from: "bot", text: "Hi! 👋 I'm A&B's assistant. Tap a question below, or grab a free quote and Brad will reach out." },
+  ]);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [note, setNote] = useState("");
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
+  }, [msgs, open, view]);
+
+  const ask = (item: { q: string; a: string }) =>
+    setMsgs((p) => [...p, { from: "me", text: item.q }, { from: "bot", text: item.a }]);
+
+  const sendQuote = (e: FormEvent) => {
+    e.preventDefault();
+    submitLead({ name, phone, message: note, service: "Chat — free quote request" });
+    setView("sent");
+  };
+
+  return (
+    <>
+      {!open && (
+        <button
+          onClick={() => setOpen(true)}
+          aria-label="Open chat"
+          className="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-brand text-white shadow-xl transition hover:scale-105 hover:bg-brand-dark"
+        >
+          <MessageCircle className="h-6 w-6" />
+        </button>
+      )}
+
+      {open && (
+        <div className="fixed bottom-5 right-5 z-50 flex h-[32rem] w-[22rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-black/10 bg-white shadow-2xl">
+          <header className="flex items-center justify-between bg-ink px-4 py-3 text-white">
+            <div className="flex items-center gap-2">
+              <span className="grid h-8 w-8 place-items-center rounded-full bg-brand text-white"><Hammer className="h-4 w-4" /></span>
+              <div>
+                <p className="text-sm font-bold leading-tight">A&amp;B Home Improvement</p>
+                <p className="text-[11px] text-white/60">Typically replies fast</p>
+              </div>
+            </div>
+            <button onClick={() => setOpen(false)} aria-label="Close chat" className="rounded p-1 hover:bg-white/10">
+              <X className="h-5 w-5" />
+            </button>
+          </header>
+
+          {view === "chat" && (
+            <>
+              <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto bg-cloud px-4 py-4">
+                {msgs.map((m, i) => (
+                  <div key={i} className={`flex ${m.from === "me" ? "justify-end" : "justify-start"}`}>
+                    <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed ${m.from === "me" ? "bg-brand text-white" : "border border-black/5 bg-white text-ink"}`}>
+                      {m.text}
+                    </div>
+                  </div>
+                ))}
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {CHAT_FAQ.map((f) => (
+                    <button key={f.q} onClick={() => ask(f)} className="rounded-full border border-brand/30 bg-white px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-brand/10">
+                      {f.q}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 border-t border-black/5 bg-white p-3">
+                <button onClick={() => setView("quote")} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2.5 text-sm font-bold text-white transition hover:bg-brand-dark">
+                  <Send className="h-4 w-4" /> Free quote
+                </button>
+                <a href={PHONE_HREF} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-ink px-3 py-2.5 text-sm font-bold text-white transition hover:bg-charcoal">
+                  <Phone className="h-4 w-4" /> Call Brad
+                </a>
+              </div>
+            </>
+          )}
+
+          {view === "quote" && (
+            <form onSubmit={sendQuote} className="flex flex-1 flex-col gap-3 overflow-y-auto bg-cloud px-4 py-4">
+              <p className="text-sm text-ink/70">Leave your info and Brad will call with your free, no-obligation quote.</p>
+              <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" className="w-full rounded-lg border border-black/10 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-brand" />
+              <input required type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone number" className="w-full rounded-lg border border-black/10 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-brand" />
+              <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} placeholder="What do you need? (optional)" className="w-full flex-1 resize-none rounded-lg border border-black/10 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-brand" />
+              <div className="grid grid-cols-[auto_1fr] gap-2">
+                <button type="button" onClick={() => setView("chat")} className="rounded-lg border border-black/10 bg-white px-3 py-2.5 text-sm font-semibold text-ink transition hover:bg-black/5">Back</button>
+                <button type="submit" className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2.5 text-sm font-bold text-white transition hover:bg-brand-dark">
+                  <Send className="h-4 w-4" /> Send to Brad
+                </button>
+              </div>
+            </form>
+          )}
+
+          {view === "sent" && (
+            <div className="flex flex-1 flex-col items-center justify-center gap-3 bg-cloud px-6 text-center">
+              <CheckCircle2 className="h-12 w-12 text-brand" />
+              <p className="text-lg font-bold text-ink">Got it{name ? `, ${name.split(" ")[0]}` : ""}!</p>
+              <p className="text-sm text-ink/60">Brad will reach out shortly with your free quote. Need it now? Call {PHONE}.</p>
+              <button onClick={() => { setView("chat"); setName(""); setPhone(""); setNote(""); }} className="mt-1 rounded-lg border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:bg-black/5">
+                Back to chat
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  );
+}
+
 function SiteLayout() {
-  return (<><Header /><main><Outlet /></main><Footer /></>);
+  return (<><Header /><main><Outlet /></main><Footer /><RoofChat /></>);
 }
 
 /* ---------------- Admin dashboard ---------------- */
