@@ -15,7 +15,7 @@ export async function sendSms(body: string) {
   await Promise.all(
     recipients.map(async (num) => {
       try {
-        await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
+        const r = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
           method: "POST",
           headers: {
             Authorization: `Basic ${auth}`,
@@ -23,8 +23,12 @@ export async function sendSms(body: string) {
           },
           body: new URLSearchParams({ To: num, From: from, Body: body }).toString(),
         });
-      } catch {
+        const txt = await r.text();
+        if (r.ok) console.log(`[sms] sent to ${num}`);
+        else console.error(`[sms] failed to ${num} (${r.status}): ${txt.slice(0, 200)}`);
+      } catch (e) {
         // Never let a texting hiccup break the caller.
+        console.error(`[sms] error to ${num}:`, e);
       }
     }),
   );
