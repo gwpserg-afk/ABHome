@@ -1,18 +1,40 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { sendSms } from "./_twilio";
+
+// Texts everyone in LEAD_SMS_TO on a successful payment. Best-effort.
+async function sendSms(body: string) {
+  const sid = process.env.TWILIO_ACCOUNT_SID;
+  const token = process.env.TWILIO_AUTH_TOKEN;
+  const from = process.env.TWILIO_FROM;
+  const to = process.env.LEAD_SMS_TO;
+  if (!sid || !token || !from || !to) return;
+  const auth = Buffer.from(`${sid}:${token}`).toString("base64");
+  await Promise.all(
+    to.split(",").map((n) => n.trim()).filter(Boolean).map(async (num) => {
+      try {
+        const r = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
+          method: "POST",
+          headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ To: num, From: from, Body: body }).toString(),
+        });
+        if (!r.ok) console.error(`[sms] failed to ${num} (${r.status}): ${(await r.text()).slice(0, 200)}`);
+        else console.log(`[sms] sent to ${num}`);
+      } catch (e) {
+        console.error(`[sms] error to ${num}:`, e);
+      }
+    }),
+  );
+}
 
 // Texts the team when a customer pays. To turn on:
 //  1) Stripe → Developers → Webhooks → Add endpoint:
 //       https://www.abroofingmi.com/api/stripe-webhook?token=YOUR_SECRET
 //     Events: checkout.session.completed (and payment_intent.succeeded).
 //  2) Vercel (ab-home) → add STRIPE_WEBHOOK_TOKEN = the same YOUR_SECRET.
-// The ?token guards the endpoint so only Stripe (with your secret) can trigger it.
 // Always returns 200 so Stripe never retry-storms.
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   const token = process.env.STRIPE_WEBHOOK_TOKEN;
-  // Disabled until a token is set; and reject anything without the matching token.
   if (!token || req.query.token !== token) return res.status(401).json({ error: "unauthorized" });
 
   try {
