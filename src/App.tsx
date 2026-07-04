@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type FormEvent } from "react";
+import { useState, useEffect, useRef, type FormEvent, type ReactNode } from "react";
 import { BrowserRouter, Routes, Route, Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import {
   Phone, Star, ShieldCheck, BadgeCheck, Wallet, MapPin, Clock, ArrowRight,
@@ -391,6 +391,7 @@ function Estimator() {
                 </form>
               )}
               <p className="text-[11px] text-white/40 mt-3">Ballpark only — final price after a free inspection. Shingles &amp; flat roofs (no metal/steel).</p>
+              <p className="text-[11px] text-white/40 mt-1.5">By submitting, you agree to be contacted by phone or text about your request. Msg &amp; data rates may apply. Reply STOP to opt out. See our <Link to="/terms" className="underline hover:text-brand-soft">Terms</Link> &amp; <Link to="/privacy" className="underline hover:text-brand-soft">Privacy</Link>.</p>
             </div>
           </div>
         )}
@@ -792,6 +793,7 @@ function ContactForm() {
       <button type="submit" className="w-full inline-flex items-center justify-center gap-2 bg-brand hover:bg-brand-dark text-white font-bold px-6 py-3.5 rounded-lg transition-colors">
         Get My Free Estimate <ArrowRight className="w-4 h-4" />
       </button>
+      <p className="text-[11px] text-slatey/70 mt-1">By submitting, you agree to be contacted by phone or text about your request. Msg &amp; data rates may apply. Reply STOP to opt out. See our <Link to="/terms" className="underline hover:text-brand">Terms</Link> &amp; <Link to="/privacy" className="underline hover:text-brand">Privacy</Link>.</p>
     </form>
   );
 }
@@ -889,6 +891,11 @@ function Footer() {
         </div>
       </div>
       <div className="border-t border-white/10 py-5 text-center text-xs text-white/45">
+        <div className="flex items-center justify-center gap-4 mb-2">
+          <Link to="/privacy" className="hover:text-brand-soft">Privacy Policy</Link>
+          <span aria-hidden>·</span>
+          <Link to="/terms" className="hover:text-brand-soft">Terms &amp; SMS</Link>
+        </div>
         © {new Date().getFullYear()} A&amp;B Home Improvement LLC · All rights reserved.
       </div>
     </footer>
@@ -1331,6 +1338,91 @@ function AdminPage() {
   );
 }
 
+/* ---------------- Legal pages ---------------- */
+function LegalShell({ title, updated, children }: { title: string; updated: string; children: ReactNode }) {
+  return (
+    <section className="bg-cloud">
+      <div className="container-x max-w-3xl py-14">
+        <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-slatey hover:text-ink mb-6"><ArrowLeft className="w-4 h-4" /> Back to site</Link>
+        <h1 className="font-display text-3xl sm:text-4xl font-extrabold text-ink">{title}</h1>
+        <p className="text-sm text-slatey mt-2">Last updated: {updated}</p>
+        <div className="mt-8 space-y-5 text-[15px] leading-relaxed text-slatey [&_h2]:font-display [&_h2]:text-ink [&_h2]:font-bold [&_h2]:text-xl [&_h2]:mt-8 [&_h2]:mb-2 [&_a]:text-brand [&_a]:font-semibold [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1 [&_strong]:text-ink">
+          {children}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PrivacyPage() {
+  return (
+    <LegalShell title="Privacy Policy" updated="July 4, 2026">
+      <p>A&amp;B Home Improvement LLC ("A&amp;B," "we," "us") respects your privacy. This policy explains what we collect, how we use it, and your choices.</p>
+
+      <h2>Information we collect</h2>
+      <ul>
+        <li>Details you submit through our forms: your name, phone number, email, property address, and the project or service you're interested in.</li>
+        <li>Payment information, which is processed securely by our payment provider (Stripe). We do not store your card number.</li>
+        <li>Basic technical data (e.g., pages visited) to keep the site working.</li>
+      </ul>
+
+      <h2>How we use your information</h2>
+      <ul>
+        <li>To respond to your quote or inspection request and schedule your service.</li>
+        <li>To contact you by phone, email, or text about your inquiry, appointment, estimate, or payment.</li>
+        <li>To process payments you authorize.</li>
+      </ul>
+
+      <h2>Text messaging</h2>
+      <p>If you give us your mobile number, we may text you about your request, appointment, or payment. Message frequency varies. <strong>Message and data rates may apply.</strong> You can reply <strong>STOP</strong> at any time to opt out, or <strong>HELP</strong> for help. <strong>We do not sell or share your mobile number, or consent to receive text messages, with any third parties or affiliates for their own marketing.</strong></p>
+
+      <h2>Who we share it with</h2>
+      <p>We use trusted service providers only to run our business — form delivery (Formspree), payments (Stripe), and secure data storage (Supabase). We never sell your personal information.</p>
+
+      <h2>Data retention &amp; security</h2>
+      <p>We keep your information only as long as needed to serve you and meet legal requirements, and we protect it with reasonable safeguards.</p>
+
+      <h2>Your choices</h2>
+      <p>Reply STOP to opt out of texts, or contact us to update or delete your information.</p>
+
+      <h2>Contact us</h2>
+      <p>Call <a href={PHONE_HREF}>{PHONE}</a> or use our <Link to="/contact">Contact page</Link>. A&amp;B Home Improvement LLC, {ADDRESS}.</p>
+    </LegalShell>
+  );
+}
+
+function TermsPage() {
+  return (
+    <LegalShell title="Terms of Service" updated="July 4, 2026">
+      <p>By using the A&amp;B Home Improvement LLC website and services, you agree to these terms.</p>
+
+      <h2>Our services</h2>
+      <p>We provide roofing and home-improvement estimates and work in the Greater Detroit / Shelby Township, MI area. Any estimate is a good-faith ballpark and is not a binding quote until confirmed in a signed agreement after an in-person inspection.</p>
+
+      <h2>Payments</h2>
+      <p>When you choose to pay, payments are handled securely by Stripe (card, and monthly options via Affirm/Klarna where available). Charges appear on your statement as A&amp;B Home Improvement.</p>
+
+      <h2>SMS / text messaging terms</h2>
+      <ul>
+        <li>By providing your mobile phone number, you consent to receive text messages from A&amp;B Home Improvement about your inquiry, appointment, estimate, or payment.</li>
+        <li>Message frequency varies. <strong>Message and data rates may apply.</strong></li>
+        <li>Reply <strong>STOP</strong> to unsubscribe at any time. Reply <strong>HELP</strong> for help.</li>
+        <li>Carriers are not liable for delayed or undelivered messages.</li>
+        <li>See our <Link to="/privacy">Privacy Policy</Link> for how we handle your information.</li>
+      </ul>
+
+      <h2>Limitation of liability</h2>
+      <p>The website and estimates are provided "as is." To the fullest extent permitted by law, A&amp;B is not liable for indirect or incidental damages arising from use of the site.</p>
+
+      <h2>Governing law</h2>
+      <p>These terms are governed by the laws of the State of Michigan.</p>
+
+      <h2>Contact us</h2>
+      <p>Call <a href={PHONE_HREF}>{PHONE}</a> or use our <Link to="/contact">Contact page</Link>. A&amp;B Home Improvement LLC, {ADDRESS}.</p>
+    </LegalShell>
+  );
+}
+
 /* ---------------- App ---------------- */
 // The admin.abroofingmi.com subdomain serves the private dashboard at its root.
 const IS_ADMIN_HOST = typeof window !== "undefined" && window.location.hostname.startsWith("admin.");
@@ -1359,6 +1451,8 @@ export default function App() {
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/pay/success" element={<PaySuccessPage />} />
           <Route path="/pay/cancel" element={<PayCancelPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
         </Route>
         <Route path="/admin" element={<AdminPage />} />
         <Route path="*" element={<HomePage />} />
