@@ -585,18 +585,24 @@ function MeetTheTeam() {
   return (
     <section className="section bg-cream">
       <div className="container-x grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-        <div className="relative">
-          <img src="/photos/crew-shingles.png" alt="Brad and the A&B Home Improvement crew on a roof" className="rounded-3xl shadow-lift w-full object-cover aspect-[4/5] max-h-[560px]" />
-          <div className="absolute -bottom-5 right-4 sm:right-8 bg-white rounded-2xl shadow-card px-5 py-4 flex items-center gap-3 border border-black/5">
-            <span className="grid place-items-center w-11 h-11 rounded-full bg-brand text-white font-display font-extrabold">B</span>
-            <div>
-              <div className="font-display font-extrabold text-ink leading-tight">Brad</div>
-              <div className="text-[12px] text-slatey">Owner · on every job</div>
+        <div>
+          <div className="relative">
+            <img src="/photos/brad-2.jpg" alt="Brad, owner of A&B Home Improvement, working on a roof" className="rounded-3xl shadow-lift w-full object-cover aspect-[4/5] max-h-[520px]" />
+            <div className="absolute -bottom-5 right-4 sm:right-8 bg-white rounded-2xl shadow-card px-5 py-4 flex items-center gap-3 border border-black/5">
+              <span className="grid place-items-center w-11 h-11 rounded-full bg-brand text-white font-display font-extrabold">B</span>
+              <div>
+                <div className="font-display font-extrabold text-ink leading-tight">Brad</div>
+                <div className="text-[12px] text-slatey">Owner · on every job</div>
+              </div>
             </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3 mt-8">
+            <img src="/photos/brad-1.jpg" alt="Brad installing a roof in Shelby Township" className="rounded-2xl shadow-card w-full object-cover aspect-[4/3]" />
+            <img src="/photos/team.jpg" alt="The A&B Home Improvement roofing crew on a job" className="rounded-2xl shadow-card w-full object-cover aspect-[4/3]" />
           </div>
         </div>
         <div>
-          <p className="text-brand font-bold uppercase tracking-[0.2em] text-xs mb-3">Meet the team</p>
+          <p className="text-brand font-bold uppercase tracking-[0.2em] text-xs mb-3">Meet the owner</p>
           <h2 className="text-4xl md:text-5xl text-ink">Real people. Real work. Right here in Shelby Township.</h2>
           <div className="mt-6 space-y-4 text-slatey text-lg leading-relaxed">
             <p>A&amp;B started the honest way — showing up on time, doing the job right, and treating every home like it's our own. No pushy sales, no crews that vanish halfway through.</p>
