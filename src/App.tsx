@@ -4,7 +4,7 @@ import {
   Phone, Star, ShieldCheck, BadgeCheck, Wallet, MapPin, Clock, ArrowRight,
   Menu, X, Home, Hammer, Droplets, PaintRoller, Wrench,
   CheckCircle2, Calculator, Sparkles, Award, ThumbsUp,
-  LayoutDashboard, DollarSign, TrendingUp, Users, CreditCard, ArrowLeft, Percent,
+  LayoutDashboard, DollarSign, TrendingUp, Users, CreditCard, ArrowLeft,
   Lock, Eye, EyeOff, Calendar, MessageCircle, Send,
 } from "lucide-react";
 
@@ -1097,28 +1097,6 @@ function SiteLayout() {
 }
 
 /* ---------------- Admin dashboard ---------------- */
-type PipeRow = { name: string; address: string; service: string; est: number; cost: number; plan: string; paid: string; status: string; date: string };
-const LEADS: PipeRow[] = [
-  {
-    name: "Sarah Whitmore", address: "57559 Yorkshire Dr, Shelby Twp", service: "Full Roof Replacement",
-    est: 14200, cost: 8600, plan: "24-mo financing", paid: "Financing (approved)", status: "Won", date: "Jun 26",
-  },
-  {
-    name: "Mike Delgado", address: "1204 Rochester Rd, Rochester Hills", service: "Gutters + Siding",
-    est: 6800, cost: 4100, plan: "$0-down · 12-mo", paid: "Card (deposit)", status: "In Progress", date: "Jun 28",
-  },
-  {
-    name: "The Hendersons", address: "8890 24 Mile Rd, Macomb", service: "Roof Leak Repair",
-    est: 2400, cost: 1150, plan: "Paid in full", paid: "Check", status: "New Lead", date: "Jun 30",
-  },
-];
-
-const statusStyle: Record<string, string> = {
-  "Won": "bg-green-100 text-green-700",
-  "In Progress": "bg-brand/15 text-brand-dark",
-  "New Lead": "bg-blue-100 text-blue-700",
-};
-
 function InvoiceGenerator() {
   const [amount, setAmount] = useState("");
   const [desc, setDesc] = useState("");
@@ -1213,25 +1191,12 @@ function AdminLogin({ value, onChange, onSubmit, err, loading }: { value: string
 }
 
 function AdminPage() {
-  const money = (n: number) => "$" + n.toLocaleString();
-
   const [pw, setPw] = useState("");
   const [authed, setAuthed] = useState(false);
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
   const [realLeads, setRealLeads] = useState<RealLead[]>([]);
   const [configured, setConfigured] = useState(false);
-
-  // Editable pipeline — Brad can change any price/cost/status and the whole dashboard updates live.
-  const [rows, setRows] = useState<PipeRow[]>(() => LEADS.map((l) => ({ ...l })));
-  const [editing, setEditing] = useState(false);
-  const updateRow = (i: number, patch: Partial<PipeRow>) =>
-    setRows((rs) => rs.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
-  const numCls = "w-24 rounded-md border border-black/15 px-2 py-1 text-sm text-right focus:outline-none focus:border-brand";
-  const txtCls = "w-full min-w-[110px] rounded-md border border-black/15 px-2 py-1 text-sm focus:outline-none focus:border-brand";
-  const pipeline = rows.reduce((s, l) => s + l.est, 0);
-  const totalMargin = rows.reduce((s, l) => s + (l.est - l.cost), 0);
-  const avgMargin = pipeline ? Math.round((totalMargin / pipeline) * 100) : 0;
 
   const verify = async (k: string, silent = false) => {
     setLoading(true); if (!silent) setErr("");
@@ -1251,11 +1216,14 @@ function AdminPage() {
   const logout = () => { sessionStorage.removeItem("ab_admin_key"); setAuthed(false); setPw(""); };
   const fmtDate = (iso?: string) => iso ? new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "";
 
+  const now = Date.now();
+  const within = (days: number) =>
+    realLeads.filter((l) => l.created_at && now - new Date(l.created_at).getTime() <= days * 864e5).length;
   const kpis = [
-    { icon: Users, label: "Active Leads", value: String(LEADS.length), sub: "3 new this week", tone: "text-brand" },
-    { icon: DollarSign, label: "Pipeline Value", value: money(pipeline), sub: "across all open jobs", tone: "text-green-600" },
-    { icon: TrendingUp, label: "Total Margin", value: money(totalMargin), sub: "estimated profit", tone: "text-brand" },
-    { icon: Percent, label: "Avg Margin", value: avgMargin + "%", sub: "healthy & on target", tone: "text-green-600" },
+    { icon: Users, label: "Total Leads", value: String(realLeads.length), sub: "all time", tone: "text-brand" },
+    { icon: TrendingUp, label: "This Week", value: String(within(7)), sub: "last 7 days", tone: "text-green-600" },
+    { icon: Calendar, label: "This Month", value: String(within(30)), sub: "last 30 days", tone: "text-brand" },
+    { icon: DollarSign, label: "Quote Requests", value: String(realLeads.filter((l) => l.estimate).length), sub: "from the estimator", tone: "text-green-600" },
   ];
 
   if (!authed) return <AdminLogin value={pw} onChange={setPw} onSubmit={() => verify(pw)} err={err} loading={loading} />;
@@ -1339,8 +1307,6 @@ function AdminPage() {
           )}
         </div>
 
-        <p className="mt-8 mb-4 inline-block text-[11px] font-semibold bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full">Below: sample pipeline showing cost / margin tracking</p>
-
         {/* KPI cards */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
           {kpis.map((k) => (
@@ -1360,75 +1326,6 @@ function AdminPage() {
           <InvoiceGenerator />
         </div>
 
-        {/* Leads table */}
-        <div className="bg-white rounded-2xl border border-black/5 shadow-card mt-8 overflow-hidden">
-          <div className="flex items-center justify-between px-6 py-5 border-b border-black/5">
-            <div>
-              <h2 className="font-display text-xl font-extrabold text-ink">Leads &amp; Jobs</h2>
-              <p className="text-sm text-slatey">Edit any price, cost, or status — the totals above update instantly.</p>
-            </div>
-            <button onClick={() => setEditing((e) => !e)} className={`inline-flex items-center gap-1.5 text-sm font-bold px-4 py-2 rounded-lg transition-colors ${editing ? "bg-brand text-white hover:bg-brand-dark" : "bg-cloud text-ink hover:bg-black/5"}`}>
-              {editing ? <><CheckCircle2 className="w-4 h-4" /> Done</> : "Edit prices"}
-            </button>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-[11px] uppercase tracking-wider text-slatey/70 bg-cloud">
-                  <th className="px-6 py-3 font-bold">Customer</th>
-                  <th className="px-4 py-3 font-bold">Service</th>
-                  <th className="px-4 py-3 font-bold text-right">Estimate</th>
-                  <th className="px-4 py-3 font-bold text-right">Cost</th>
-                  <th className="px-4 py-3 font-bold text-right">Margin</th>
-                  <th className="px-4 py-3 font-bold">Payment Plan</th>
-                  <th className="px-4 py-3 font-bold">Paid Via</th>
-                  <th className="px-4 py-3 font-bold">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-black/5">
-                {rows.map((l, i) => {
-                  const margin = l.est - l.cost;
-                  const pct = l.est ? Math.round((margin / l.est) * 100) : 0;
-                  return (
-                    <tr key={i} className="hover:bg-cloud/60 transition-colors align-top">
-                      <td className="px-6 py-4">
-                        <div className="font-bold text-ink">{l.name}</div>
-                        <div className="text-[12px] text-slatey flex items-center gap-1 mt-0.5"><MapPin className="w-3 h-3" /> {l.address}</div>
-                        <div className="text-[11px] text-slatey/60 mt-0.5">{l.date}</div>
-                      </td>
-                      <td className="px-4 py-4 text-slatey">{l.service}</td>
-                      <td className="px-4 py-4 text-right font-bold text-ink">
-                        {editing ? <input type="number" value={l.est} onChange={(e) => updateRow(i, { est: +e.target.value })} className={numCls} /> : money(l.est)}
-                      </td>
-                      <td className="px-4 py-4 text-right text-slatey">
-                        {editing ? <input type="number" value={l.cost} onChange={(e) => updateRow(i, { cost: +e.target.value })} className={numCls} /> : money(l.cost)}
-                      </td>
-                      <td className="px-4 py-4 text-right">
-                        <div className={`font-bold ${margin >= 0 ? "text-green-600" : "text-red-600"}`}>{money(margin)}</div>
-                        <div className="text-[11px] text-slatey/70">{pct}% margin</div>
-                      </td>
-                      <td className="px-4 py-4">
-                        {editing ? <input value={l.plan} onChange={(e) => updateRow(i, { plan: e.target.value })} className={txtCls} /> : <span className="inline-flex items-center gap-1.5 text-slatey"><Wallet className="w-3.5 h-3.5 text-brand" /> {l.plan}</span>}
-                      </td>
-                      <td className="px-4 py-4">
-                        {editing ? <input value={l.paid} onChange={(e) => updateRow(i, { paid: e.target.value })} className={txtCls} /> : <span className="inline-flex items-center gap-1.5 text-slatey"><CreditCard className="w-3.5 h-3.5 text-brand" /> {l.paid}</span>}
-                      </td>
-                      <td className="px-4 py-4">
-                        {editing ? (
-                          <select value={l.status} onChange={(e) => updateRow(i, { status: e.target.value })} className={txtCls}>
-                            <option>New Lead</option><option>In Progress</option><option>Won</option>
-                          </select>
-                        ) : <span className={`inline-block text-[12px] font-bold px-2.5 py-1 rounded-full ${statusStyle[l.status]}`}>{l.status}</span>}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <p className="text-[12px] text-slatey/60 mt-6">This is a live preview of the owner dashboard. When we go live, every estimate submitted on the site drops in here automatically, and you'll be able to update statuses, costs, and export reports.</p>
       </div>
     </div>
   );
