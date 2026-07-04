@@ -5,7 +5,7 @@ import {
   Menu, X, Home, Hammer, Droplets, PaintRoller, Wrench,
   CheckCircle2, Calculator, Sparkles, Award, ThumbsUp,
   LayoutDashboard, DollarSign, TrendingUp, Users, CreditCard, ArrowLeft,
-  Lock, Eye, EyeOff, Calendar, MessageCircle, Send,
+  Lock, Eye, EyeOff, Calendar, MessageCircle, Send, ChevronDown,
 } from "lucide-react";
 
 const PHONE = "(810) 627-4895";
@@ -88,6 +88,16 @@ function ScrollToTop() {
 /* ---------------- Header ---------------- */
 function Header() {
   const [open, setOpen] = useState(false);
+  const [legalOpen, setLegalOpen] = useState(false);
+  const legalRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!legalOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (legalRef.current && !legalRef.current.contains(e.target as Node)) setLegalOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [legalOpen]);
   const nav = [
     ["Home", "/"],
     ["Services", "/services"],
@@ -112,6 +122,20 @@ function Header() {
           {nav.map(([l, h]) => (
             <NavLink key={h} to={h} end={h === "/"} className={linkCls}>{l}</NavLink>
           ))}
+          <div className="relative" ref={legalRef}>
+            <button
+              onClick={() => setLegalOpen((v) => !v)}
+              className={`inline-flex items-center gap-1 text-sm font-semibold transition-colors ${legalOpen ? "text-ink" : "text-slatey hover:text-ink"}`}
+            >
+              Legal <ChevronDown className={`w-3.5 h-3.5 transition-transform ${legalOpen ? "rotate-180" : ""}`} />
+            </button>
+            {legalOpen && (
+              <div className="absolute right-0 mt-2 w-44 rounded-lg border border-black/10 bg-white shadow-lg overflow-hidden z-20">
+                <Link to="/privacy" onClick={() => setLegalOpen(false)} className="block px-4 py-2.5 text-sm text-slatey hover:bg-cloud hover:text-ink">Privacy Policy</Link>
+                <Link to="/terms" onClick={() => setLegalOpen(false)} className="block px-4 py-2.5 text-sm text-slatey hover:bg-cloud hover:text-ink">Terms &amp; SMS</Link>
+              </div>
+            )}
+          </div>
         </nav>
         <div className="hidden lg:flex items-center gap-3">
           <a href={PHONE_HREF} className="flex items-center gap-2 text-sm font-bold text-ink">
@@ -131,6 +155,10 @@ function Header() {
             {nav.map(([l, h]) => (
               <NavLink key={h} to={h} end={h === "/"} onClick={() => setOpen(false)} className="py-2.5 font-semibold text-slatey">{l}</NavLink>
             ))}
+            <div className="mt-1 border-t border-black/5 pt-2">
+              <NavLink to="/privacy" onClick={() => setOpen(false)} className="block py-2.5 font-semibold text-slatey">Privacy Policy</NavLink>
+              <NavLink to="/terms" onClick={() => setOpen(false)} className="block py-2.5 font-semibold text-slatey">Terms &amp; SMS</NavLink>
+            </div>
             <a href={PHONE_HREF} className="mt-2 inline-flex items-center justify-center gap-2 bg-ink text-white font-bold px-4 py-3 rounded-lg">
               <Phone className="w-4 h-4" /> {PHONE}
             </a>
