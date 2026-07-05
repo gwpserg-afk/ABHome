@@ -15,6 +15,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!url || !key) return res.status(200).json({ leads: [], configured: false });
 
   try {
+    // Delete a lead by id (used to clear test data from the dashboard).
+    if (req.method === "DELETE") {
+      const id = (req.query.id as string) || "";
+      if (!id) return res.status(400).json({ error: "Missing id" });
+      await fetch(`${url}/rest/v1/leads?id=eq.${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: { apikey: key, Authorization: `Bearer ${key}` },
+      });
+      return res.status(200).json({ ok: true });
+    }
+
     const r = await fetch(`${url}/rest/v1/leads?select=*&order=created_at.desc`, {
       headers: { apikey: key, Authorization: `Bearer ${key}` },
     });

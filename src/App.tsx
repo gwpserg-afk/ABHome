@@ -5,7 +5,7 @@ import {
   Menu, X, Home, Hammer, Droplets, PaintRoller, Wrench,
   CheckCircle2, Calculator, Sparkles, Award, ThumbsUp,
   LayoutDashboard, DollarSign, TrendingUp, Users, CreditCard, ArrowLeft,
-  Lock, Eye, EyeOff, Calendar, MessageCircle, Send, ChevronDown,
+  Lock, Eye, EyeOff, Calendar, MessageCircle, Send, ChevronDown, Percent, Trash2, Plus,
 } from "lucide-react";
 
 const PHONE = "(810) 627-4895";
@@ -1201,6 +1201,7 @@ function InvoiceGenerator() {
 }
 
 type RealLead = { id?: string | number; name?: string; phone?: string; email?: string; address?: string; service?: string; message?: string; estimate?: string; created_at?: string };
+type Job = { id: string | number; name?: string; service?: string; cost?: number; revenue?: number; status?: string; created_at?: string };
 
 function AdminLogin({ value, onChange, onSubmit, err, loading }: { value: string; onChange: (v: string) => void; onSubmit: () => void; err: string; loading: boolean }) {
   const [show, setShow] = useState(false);
@@ -1237,34 +1238,68 @@ function AdminPage() {
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
   const [realLeads, setRealLeads] = useState<RealLead[]>([]);
-  const [configured, setConfigured] = useState(false);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [jn, setJn] = useState({ name: "", service: "", revenue: "", cost: "" });
+  const [saving, setSaving] = useState(false);
+
+  const keyRef = () => sessionStorage.getItem("ab_admin_key") || "";
+
+  const loadData = async (k: string) => {
+    try {
+      const [lr, jr] = await Promise.all([
+        fetch("/api/leads", { headers: { "x-admin-key": k } }),
+        fetch("/api/jobs", { headers: { "x-admin-key": k } }),
+      ]);
+      if (lr.ok) { const d = await lr.json(); setRealLeads(Array.isArray(d.leads) ? d.leads : []); }
+      if (jr.ok) { const d = await jr.json(); setJobs(Array.isArray(d.jobs) ? d.jobs : []); }
+    } catch {}
+  };
 
   const verify = async (k: string, silent = false) => {
     setLoading(true); if (!silent) setErr("");
     try {
       const r = await fetch("/api/leads", { headers: { "x-admin-key": k } });
       if (r.status === 401) { setErr("Wrong password."); sessionStorage.removeItem("ab_admin_key"); setLoading(false); return; }
-      if (r.status === 503) { setErr("Admin isn't set up yet — add ADMIN_PASSWORD in Vercel."); setLoading(false); return; }
-      const d = await r.json();
+      if (r.status === 503) { setErr("Admin isn't set up yet - add ADMIN_PASSWORD in Vercel."); setLoading(false); return; }
       sessionStorage.setItem("ab_admin_key", k);
-      setRealLeads(Array.isArray(d.leads) ? d.leads : []);
-      setConfigured(!!d.configured);
+      await loadData(k);
       setAuthed(true);
-    } catch { setErr("Couldn't connect — try again."); }
+    } catch { setErr("Couldn't connect - try again."); }
     setLoading(false);
   };
-  useEffect(() => { const s = sessionStorage.getItem("ab_admin_key"); if (s) verify(s, true); }, []);
+  useEffect(() => { const st = sessionStorage.getItem("ab_admin_key"); if (st) verify(st, true); }, []);
   const logout = () => { sessionStorage.removeItem("ab_admin_key"); setAuthed(false); setPw(""); };
   const fmtDate = (iso?: string) => iso ? new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "";
 
-  const now = Date.now();
-  const within = (days: number) =>
-    realLeads.filter((l) => l.created_at && now - new Date(l.created_at).getTime() <= days * 864e5).length;
+  const addJob = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!jn.name && !jn.service) return;
+    setSaving(true);
+    try {
+      const r = await fetch("/api/jobs", { method: "POST", headers: { "x-admin-key": keyRef(), "Content-Type": "application/json" }, body: JSON.stringify(jn) });
+      if (r.ok) { setJn({ name: "", service: "", revenue: "", cost: "" }); await loadData(keyRef()); }
+    } catch {}
+    setSaving(false);
+  };
+  const deleteJob = async (id: string) => {
+    try { await fetch("/api/jobs?id=" + encodeURIComponent(id), { method: "DELETE", headers: { "x-admin-key": keyRef() } }); } catch {}
+    setJobs((js) => js.filter((j) => String(j.id) !== String(id)));
+  };
+  const deleteLead = async (id: string | number) => {
+    try { await fetch("/api/leads?id=" + encodeURIComponent(String(id)), { method: "DELETE", headers: { "x-admin-key": keyRef() } }); } catch {}
+    setRealLeads((ls) => ls.filter((l) => String(l.id) !== String(id)));
+  };
+
+  const money = (n: number) => "$" + (n || 0).toLocaleString("en-US");
+  const revenue = jobs.reduce((s2, j) => s2 + (Number(j.revenue) || 0), 0);
+  const cost = jobs.reduce((s2, j) => s2 + (Number(j.cost) || 0), 0);
+  const profit = revenue - cost;
+  const margin = revenue ? Math.round((profit / revenue) * 100) : 0;
   const kpis = [
-    { icon: Users, label: "Total Leads", value: String(realLeads.length), sub: "all time", tone: "text-brand" },
-    { icon: TrendingUp, label: "This Week", value: String(within(7)), sub: "last 7 days", tone: "text-green-600" },
-    { icon: Calendar, label: "This Month", value: String(within(30)), sub: "last 30 days", tone: "text-brand" },
-    { icon: DollarSign, label: "Quote Requests", value: String(realLeads.filter((l) => l.estimate).length), sub: "from the estimator", tone: "text-green-600" },
+    { icon: DollarSign, label: "Total Revenue", value: money(revenue), sub: jobs.length + " job" + (jobs.length === 1 ? "" : "s"), tone: "text-green-600" },
+    { icon: CreditCard, label: "Supply Cost", value: money(cost), sub: "materials & expenses", tone: "text-brand" },
+    { icon: TrendingUp, label: "Profit", value: money(profit), sub: "revenue - cost", tone: profit >= 0 ? "text-green-600" : "text-red-600" },
+    { icon: Percent, label: "Margin", value: margin + "%", sub: "average", tone: "text-brand" },
   ];
 
   if (!authed) return <AdminLogin value={pw} onChange={setPw} onSubmit={() => verify(pw)} err={err} loading={loading} />;
@@ -1297,14 +1332,85 @@ function AdminPage() {
       <div className="container-x py-8">
         <div className="flex items-center gap-2 mb-1 text-brand"><LayoutDashboard className="w-5 h-5" /><span className="font-bold uppercase tracking-wider text-xs">Dashboard</span></div>
         <h1 className="font-display text-3xl font-extrabold text-ink">Welcome back, Brad</h1>
-        <p className="text-slatey mt-1">Here's how your jobs and leads are looking.</p>
+        <p className="text-slatey mt-1">Track every job's cost, revenue, and profit — all in one place.</p>
 
-        {/* Real website leads */}
-        <div className="bg-white rounded-2xl border border-black/5 shadow-card mt-6 overflow-hidden">
+        {/* Money KPIs */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+          {kpis.map((k) => (
+            <div key={k.label} className="bg-white rounded-2xl border border-black/5 shadow-card p-5">
+              <span className={`grid place-items-center w-10 h-10 rounded-xl bg-cloud ${k.tone}`}><k.icon className="w-5 h-5" /></span>
+              <div className="mt-4 font-display text-3xl font-extrabold text-ink">{k.value}</div>
+              <div className="text-sm font-bold text-slatey mt-0.5">{k.label}</div>
+              <div className="text-[12px] text-slatey/70 mt-0.5">{k.sub}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Jobs & Expenses tracker */}
+        <div className="bg-white rounded-2xl border border-black/5 shadow-card mt-8 overflow-hidden">
+          <div className="px-6 py-5 border-b border-black/5">
+            <h2 className="font-display text-xl font-extrabold text-ink">Jobs &amp; Expenses</h2>
+            <p className="text-sm text-slatey">Add any job — even ones not booked online — and your profit updates instantly.</p>
+          </div>
+          <form onSubmit={addJob} className="px-6 py-5 grid sm:grid-cols-2 lg:grid-cols-5 gap-3 border-b border-black/5 bg-cloud/40">
+            <input value={jn.name} onChange={(e) => setJn({ ...jn, name: e.target.value })} placeholder="Customer name" className="rounded-lg bg-white border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:border-brand" />
+            <input value={jn.service} onChange={(e) => setJn({ ...jn, service: e.target.value })} placeholder="Job / service" className="rounded-lg bg-white border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:border-brand" />
+            <input value={jn.revenue} onChange={(e) => setJn({ ...jn, revenue: e.target.value })} type="number" min="0" placeholder="Client paid ($)" className="rounded-lg bg-white border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:border-brand" />
+            <input value={jn.cost} onChange={(e) => setJn({ ...jn, cost: e.target.value })} type="number" min="0" placeholder="Supply cost ($)" className="rounded-lg bg-white border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:border-brand" />
+            <button type="submit" disabled={saving} className="inline-flex items-center justify-center gap-1.5 bg-brand hover:bg-brand-dark text-white font-bold px-4 py-2.5 rounded-lg transition-colors disabled:opacity-60"><Plus className="w-4 h-4" /> {saving ? "Adding…" : "Add job"}</button>
+          </form>
+          {jobs.length === 0 ? (
+            <div className="px-6 py-10 text-center">
+              <DollarSign className="w-8 h-8 text-slatey/40 mx-auto mb-2" />
+              <p className="text-slatey font-semibold">No jobs yet</p>
+              <p className="text-sm text-slatey/70 mt-1">Add your first job above and your totals fill in automatically.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-[11px] uppercase tracking-wider text-slatey/70 bg-cloud">
+                    <th className="px-6 py-3 font-bold">Customer</th>
+                    <th className="px-4 py-3 font-bold">Job</th>
+                    <th className="px-4 py-3 font-bold text-right">Paid</th>
+                    <th className="px-4 py-3 font-bold text-right">Cost</th>
+                    <th className="px-4 py-3 font-bold text-right">Profit</th>
+                    <th className="px-4 py-3 font-bold">When</th>
+                    <th className="px-4 py-3"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-black/5">
+                  {jobs.map((j) => {
+                    const pf = (Number(j.revenue) || 0) - (Number(j.cost) || 0);
+                    return (
+                      <tr key={j.id} className="hover:bg-cloud/60 transition-colors">
+                        <td className="px-6 py-4 font-bold text-ink">{j.name || "—"}</td>
+                        <td className="px-4 py-4 text-slatey">{j.service || "—"}</td>
+                        <td className="px-4 py-4 text-right text-ink">{money(Number(j.revenue) || 0)}</td>
+                        <td className="px-4 py-4 text-right text-slatey">{money(Number(j.cost) || 0)}</td>
+                        <td className={`px-4 py-4 text-right font-bold ${pf >= 0 ? "text-green-600" : "text-red-600"}`}>{money(pf)}</td>
+                        <td className="px-4 py-4 text-slatey/70 text-[13px]">{fmtDate(j.created_at)}</td>
+                        <td className="px-4 py-4 text-right"><button onClick={() => deleteJob(String(j.id))} className="text-slatey/40 hover:text-red-600"><Trash2 className="w-4 h-4" /></button></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Payment-link generator */}
+        <div className="mt-8">
+          <InvoiceGenerator />
+        </div>
+
+        {/* Website leads */}
+        <div className="bg-white rounded-2xl border border-black/5 shadow-card mt-8 overflow-hidden">
           <div className="flex items-center justify-between px-6 py-5 border-b border-black/5">
             <div>
-              <h2 className="font-display text-xl font-extrabold text-ink">New Website Leads</h2>
-              <p className="text-sm text-slatey">Live — every estimator + contact submission lands here.</p>
+              <h2 className="font-display text-xl font-extrabold text-ink">Website Leads</h2>
+              <p className="text-sm text-slatey">Every estimator + contact submission lands here automatically.</p>
             </div>
             <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-green-600"><span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" /> Live</span>
           </div>
@@ -1312,7 +1418,7 @@ function AdminPage() {
             <div className="px-6 py-10 text-center">
               <Users className="w-8 h-8 text-slatey/40 mx-auto mb-2" />
               <p className="text-slatey font-semibold">No leads yet</p>
-              <p className="text-sm text-slatey/70 mt-1">{configured ? "They'll appear here the moment someone submits the estimator or contact form." : "Connect the database (Supabase) to start saving leads — until then, leads still email Brad via Formspree."}</p>
+              <p className="text-sm text-slatey/70 mt-1">They'll appear here the moment someone submits the estimator or contact form.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -1321,9 +1427,10 @@ function AdminPage() {
                   <tr className="text-left text-[11px] uppercase tracking-wider text-slatey/70 bg-cloud">
                     <th className="px-6 py-3 font-bold">Customer</th>
                     <th className="px-4 py-3 font-bold">Contact</th>
-                    <th className="px-4 py-3 font-bold">Service / Interest</th>
+                    <th className="px-4 py-3 font-bold">Service</th>
                     <th className="px-4 py-3 font-bold">Estimate</th>
                     <th className="px-4 py-3 font-bold">When</th>
+                    <th className="px-4 py-3"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-black/5">
@@ -1340,31 +1447,13 @@ function AdminPage() {
                       <td className="px-4 py-4 text-slatey">{l.service || "—"}{l.message && <div className="text-[12px] text-slatey/60 mt-0.5 max-w-xs truncate">{l.message}</div>}</td>
                       <td className="px-4 py-4 font-bold text-ink">{l.estimate || "—"}</td>
                       <td className="px-4 py-4 text-slatey/70 text-[13px]">{fmtDate(l.created_at)}</td>
+                      <td className="px-4 py-4 text-right">{l.id != null && <button onClick={() => deleteLead(l.id!)} className="text-slatey/40 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
-        </div>
-
-        {/* KPI cards */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-          {kpis.map((k) => (
-            <div key={k.label} className="bg-white rounded-2xl border border-black/5 shadow-card p-5">
-              <div className="flex items-center justify-between">
-                <span className={`grid place-items-center w-10 h-10 rounded-xl bg-cloud ${k.tone}`}><k.icon className="w-5 h-5" /></span>
-              </div>
-              <div className="mt-4 font-display text-3xl font-extrabold text-ink">{k.value}</div>
-              <div className="text-sm font-bold text-slatey mt-0.5">{k.label}</div>
-              <div className="text-[12px] text-slatey/70 mt-0.5">{k.sub}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Invoice / payment-link generator */}
-        <div className="mt-8">
-          <InvoiceGenerator />
         </div>
 
       </div>
